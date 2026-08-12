@@ -1,0 +1,162 @@
+import { Bell, ChevronDown, Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useSession } from "@/contexts/session-context";
+import { useAuth } from "@/contexts/auth-context";
+import GlobalSearch from "@/components/admin/GlobalSearch";
+
+interface HeaderProps {
+  onOpenMenu: () => void;
+}
+
+export function Header({ onOpenMenu }: HeaderProps) {
+  const { currentSession, currentTerm, error } = useSession();
+  const { user, logout } = useAuth();
+
+  const handleSignOut = () => {
+    logout();
+  };
+
+  const getUserInitials = () => {
+    if (!user) return "U";
+    
+    // Check if user is Staff (has role property)
+    if ("role" in user) {
+      const firstName = user.firstName || "";
+      const lastName = user.lastName || "";
+      if (firstName && lastName) {
+        return `${firstName[0]}${lastName[0]}`.toUpperCase();
+      }
+      return firstName?.[0]?.toUpperCase() || lastName?.[0]?.toUpperCase() || "U";
+    }
+    
+    // Check if user is Parent
+    if ("fatherFirstName" in user) {
+      const firstName = user.fatherFirstName || user.motherFirstName || "";
+      const lastName = user.fatherLastName || user.motherLastName || "";
+      if (firstName && lastName) {
+        return `${firstName[0]}${lastName[0]}`.toUpperCase();
+      }
+      return firstName?.[0]?.toUpperCase() || lastName?.[0]?.toUpperCase() || "U";
+    }
+    
+    return "U";
+  };
+
+  const getDisplayName = () => {
+    if (!user) return "User";
+    
+    // Check if user is Staff (has role property)
+    if ("role" in user) {
+      const firstName = user.firstName || "";
+      const lastName = user.lastName || "";
+      if (firstName && lastName) {
+        return `${firstName} ${lastName}`;
+      }
+      return firstName || lastName || "User";
+    }
+    
+    // Check if user is Parent
+    if ("fatherFirstName" in user) {
+      const firstName = user.fatherFirstName || user.motherFirstName || "";
+      const lastName = user.fatherLastName || user.motherLastName || "";
+      if (firstName && lastName) {
+        return `${firstName} ${lastName}`;
+      }
+      return firstName || lastName || "Parent";
+    }
+    
+    return "User";
+  };
+
+  const getUserRole = () => {
+    if (!user) return "Staff";
+    
+    // Check if user is Staff (has role property)
+    if ("role" in user) {
+      return user.role;
+    }
+    
+    // Check if user is Parent
+    if ("fatherFirstName" in user) {
+      return "Parent";
+    }
+    
+    return "Staff";
+  };
+
+  const userInitials = getUserInitials();
+  const displayName = getDisplayName();
+  const userRole = getUserRole();
+
+  return (
+    <header className="sticky top-0 z-20 flex h-20 items-center gap-3 border-b bg-card/95 px-4 backdrop-blur md:px-7">
+      <Button variant="ghost" size="icon" onClick={onOpenMenu} className="rounded-xl lg:hidden" aria-label="Open navigation">
+        <Menu className="size-5" />
+      </Button>
+
+      <div className="relative hidden max-w-md flex-1 sm:block">
+        <GlobalSearch />
+      </div>
+
+      <div className="ml-auto flex items-center gap-2 sm:gap-4">
+        <div className="hidden text-right xl:block">
+          {error ? (
+            <p className="text-xs text-destructive">
+              {error}
+            </p>
+          ) : (
+            <>
+              <p className="text-xs font-semibold text-foreground">
+                {currentSession?.session || "No Session"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {currentTerm?.term || "No Term"}
+              </p>
+            </>
+          )}
+        </div>
+        <div className="hidden h-8 w-px bg-border xl:block" />
+        <Button variant="ghost" size="icon" className="relative rounded-xl" aria-label="Notifications">
+          <Bell className="size-5" />
+          <span className="absolute right-2 top-2 size-2 rounded-full bg-accent ring-2 ring-card" />
+        </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-12 gap-2 rounded-xl px-2 hover:bg-muted">
+              <Avatar className="size-9 border border-border">
+                <AvatarFallback className="bg-primary text-xs font-bold text-primary-foreground">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+              <span className="hidden text-left md:block">
+                <span className="block text-sm font-semibold leading-4">{displayName}</span>
+                <span className="text-xs font-normal text-muted-foreground">{userRole}</span>
+              </span>
+              <ChevronDown className="hidden size-4 text-muted-foreground md:block" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 rounded-xl p-2">
+            <DropdownMenuLabel>My account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="rounded-lg">Profile</DropdownMenuItem>
+            <DropdownMenuItem className="rounded-lg">Account settings</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="rounded-lg text-destructive" onClick={handleSignOut}>
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+  );
+}
