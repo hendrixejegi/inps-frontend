@@ -100,6 +100,7 @@ export default function App() {
                 <Route path="/admin/academic-years" element={<AcademicYearsList />} />
                 <Route path="/admin/academic-years/add" element={<AddSession />} />
                 <Route path="/admin/academic-years/:id" element={<SessionDetails />} />
+                <Route path="/admin/academic-years/:id/edit" element={<AddSession />} />
                 <Route path="/admin/academic-years/:id/add-term" element={<AddTerm />} />
                 <Route path="/admin/results" element={<ResultsDashboard />} />
                 <Route path="/admin/results/entry" element={<ResultsEntry />} />

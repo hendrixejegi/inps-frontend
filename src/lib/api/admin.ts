@@ -358,8 +358,20 @@ export const adminApi = {
     return apiClient.get<ApiResponse<AcademicTerm[]>>("/api/admin/config/terms");
   },
 
+  async getTermsBySession(sessionId: string): Promise<ApiResponse<AcademicTerm[]>> {
+    return apiClient.get<ApiResponse<AcademicTerm[]>>(`/api/admin/config/sessions/${sessionId}/terms`);
+  },
+
   async updateTermStatus(termId: string, data: UpdateTermStatusRequest): Promise<ApiResponse<AcademicTerm>> {
     return apiClient.patch<ApiResponse<AcademicTerm>>(`/api/admin/config/terms/${termId}/status`, data);
+  },
+
+  async updateTerm(termId: string, data: { startDate?: string; endDate?: string }): Promise<ApiResponse<AcademicTerm>> {
+    return apiClient.patch<ApiResponse<AcademicTerm>>(`/api/admin/config/terms/${termId}`, data);
+  },
+
+  async deleteTerm(termId: string): Promise<ApiResponse<void>> {
+    return apiClient.delete<ApiResponse<void>>(`/api/admin/config/terms/${termId}`);
   },
 
   async getCurrentTerm(): Promise<ApiResponse<AcademicTerm>> {
