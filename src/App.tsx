@@ -8,6 +8,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import Dashboard from "./pages/admin/Dashboard";
 import StudentsList from "./pages/admin/students/List";
 import AddStudent from "./pages/admin/students/Add";
@@ -76,6 +78,8 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Login />} />
                 <Route path="/auth/login" element={<Login />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/admin/dashboard" element={<Dashboard />} />
                 <Route path="/admin/students" element={<StudentsList />} />
                 <Route path="/admin/students/add" element={<AddStudent />} />
