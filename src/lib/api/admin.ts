@@ -250,7 +250,11 @@ export const adminApi = {
 
   // Assignments
   async getAllAssignments(filters?: AssignmentFilters): Promise<ApiResponse<SubjectAssignment[]>> {
-    return apiClient.get<ApiResponse<SubjectAssignment[]>>("/api/admin/assignments", filters);
+    // Filter out empty values to avoid 400 errors
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters || {}).filter(([_, value]) => value !== "" && value !== undefined && value !== null)
+    );
+    return apiClient.get<ApiResponse<SubjectAssignment[]>>("/api/admin/assignments", cleanFilters);
   },
 
   async getAssignmentById(assignmentId: string): Promise<ApiResponse<SubjectAssignment>> {
@@ -271,6 +275,23 @@ export const adminApi = {
 
   async bulkCreateAssignment(data: BulkCreateAssignmentRequest): Promise<ApiResponse<{ added: number; skipped: number; assignments: SubjectAssignment[] }>> {
     return apiClient.post<ApiResponse<{ added: number; skipped: number; assignments: SubjectAssignment[] }>>("/api/admin/assignments/bulk", data);
+  },
+
+  async removeAssignment(assignmentId: string): Promise<ApiResponse<void>> {
+    return apiClient.delete<ApiResponse<void>>(`/api/admin/assignments/${assignmentId}`);
+  },
+
+  // Class Teacher Assignments
+  async getAllClassTeachers(): Promise<ApiResponse<any[]>> {
+    return apiClient.get<ApiResponse<any[]>>("/api/admin/classes");
+  },
+
+  async assignClassTeacher(classId: string, teacherId: string): Promise<ApiResponse<any>> {
+    return apiClient.post<ApiResponse<any>>(`/api/admin/classes/${classId}/class-teacher`, { teacherId });
+  },
+
+  async removeClassTeacher(classId: string): Promise<ApiResponse<any>> {
+    return apiClient.delete<ApiResponse<any>>(`/api/admin/classes/${classId}/class-teacher`);
   },
 
   async updateAssignment(assignmentId: string, data: UpdateAssignmentRequest): Promise<ApiResponse<SubjectAssignment>> {

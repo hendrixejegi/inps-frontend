@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, GraduationCap, LockKeyhole, Mail } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth, type UserType } from "@/contexts/auth-context";
+import { SchoolLogo } from "@/components/shared/SchoolLogo";
 
 const loginSchema = z.object({
   email: z.string().trim().min(1, "Email is required.").email("Enter a valid email address."),
@@ -90,9 +91,7 @@ export default function Login() {
     <main className="min-h-screen bg-background lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(440px,0.78fr)]">
       <section className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-14 xl:px-20">
         <a href="/" className="inline-flex w-fit items-center gap-3 rounded-xl" aria-label="INPS School Portal home">
-          <span className="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-            <GraduationCap className="size-6" aria-hidden="true" />
-          </span>
+          <SchoolLogo size="custom" customSize="size-11" variant="icon" showBackground backgroundClassName="bg-primary text-primary-foreground shadow-sm" forceWhiteBackground />
           <span>
             <span className="block text-base font-extrabold tracking-wide text-primary">INPS SCHOOL</span>
             <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Management portal</span>
@@ -191,14 +190,26 @@ export default function Login() {
             </Button>
           </form>
         </div>
+        
+        {/* Footer with copyright and Saint Tech concept */}
+        <div className="mt-8 pt-6 border-t border-border">
+          <div className="text-center space-y-2">
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} International Nursery and Primary School. All rights reserved.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Powered by <span className="font-semibold text-primary">Saint Tech Concept</span>
+            </p>
+          </div>
+        </div>
       </section>
       
       {/* Right side - visible only on large screens */}
       <section className="hidden lg:flex relative overflow-hidden bg-primary">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary/70 to-primary/50" />
         <div className="relative z-10 flex h-full flex-col justify-center px-12 text-center">
-          <div className="grid size-20 place-items-center rounded-2xl bg-primary-foreground/10 text-primary-foreground mx-auto mb-8">
-            <GraduationCap className="size-10" />
+          <div className="flex justify-center mb-8">
+            <SchoolLogo size="large" variant="full" forceWhiteBackground />
           </div>
           <h2 className="text-4xl font-extrabold text-primary-foreground mb-4">INPS School Portal</h2>
           <p className="text-xl text-primary-foreground/80 mb-8 max-w-md mx-auto">
@@ -206,16 +217,24 @@ export default function Login() {
           </p>
           <div className="space-y-4">
             <div className="flex items-center gap-3 text-primary-foreground/70">
-              <GraduationCap className="size-5" />
-              <span>Comprehensive Student Management</span>
-            </div>
-            <div className="flex items-center gap-3 text-primary-foreground/70">
               <LockKeyhole className="size-5" />
               <span>Secure & Reliable</span>
             </div>
             <div className="flex items-center gap-3 text-primary-foreground/70">
               <Mail className="size-5" />
               <span>Real-time Notifications</span>
+            </div>
+          </div>
+          
+          {/* Footer with copyright and Saint Tech concept */}
+          <div className="mt-12 pt-6 border-t border-primary-foreground/20">
+            <div className="text-center space-y-2">
+              <p className="text-xs text-primary-foreground/60">
+                © {new Date().getFullYear()} International Nursery and Primary School. All rights reserved.
+              </p>
+              <p className="text-xs text-primary-foreground/60">
+                Powered by <span className="font-semibold text-primary-foreground">Saint Tech Concept</span>
+              </p>
             </div>
           </div>
         </div>

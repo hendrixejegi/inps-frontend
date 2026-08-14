@@ -1,20 +1,21 @@
 import {
   ChevronLeft,
-  GraduationCap,
   LayoutDashboard,
   Settings,
   UsersRound,
   WalletCards,
+  BookOpen,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SchoolLogo } from "@/components/shared/SchoolLogo";
 
 const navigation = [
   { label: "Dashboard", href: "/parent/dashboard", icon: LayoutDashboard },
   { label: "Children", href: "/parent/children", icon: UsersRound },
   { label: "Fees", href: "/parent/fees", icon: WalletCards },
-  { label: "Results", href: "/parent/results", icon: GraduationCap },
+  { label: "Results", href: "/parent/results", icon: BookOpen },
   { label: "Settings", href: "/parent/settings", icon: Settings },
 ];
 
@@ -28,9 +29,7 @@ export function ParentSidebar({ collapsed = false, onCollapse, onNavigate }: Par
   return (
     <aside className="flex h-full flex-col bg-primary text-primary-foreground">
       <div className="flex h-20 items-center gap-3 border-b border-white/10 px-5">
-        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground shadow-sm">
-          <GraduationCap className="size-5" aria-hidden="true" />
-        </div>
+        <SchoolLogo size="medium" variant={collapsed ? "icon" : "full"} showBackground backgroundClassName="bg-accent text-accent-foreground" forceWhiteBackground />
         {!collapsed && (
           <div className="min-w-0">
             <p className="truncate text-base font-bold tracking-wide">INPS Portal</p>

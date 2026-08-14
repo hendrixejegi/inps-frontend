@@ -31,6 +31,8 @@ import SubjectDetails from "./pages/admin/subjects/Details";
 import AssignmentsList from "./pages/admin/assignments/List";
 import AddAssignment from "./pages/admin/assignments/Add";
 import EditAssignment from "./pages/admin/assignments/Edit";
+import ClassTeachers from "./pages/admin/assignments/ClassTeachers";
+import SubjectTeachers from "./pages/admin/assignments/SubjectTeachers";
 import AcademicYearsList from "./pages/admin/academic-years/List";
 import AddSession from "./pages/admin/academic-years/Add";
 import SessionDetails from "./pages/admin/academic-years/Details";
@@ -94,7 +96,9 @@ export default function App() {
                 <Route path="/admin/subjects/add" element={<AddSubject />} />
                 <Route path="/admin/subjects/:subjectId" element={<SubjectDetails />} />
                 <Route path="/admin/subjects/:subjectId/edit" element={<EditSubject />} />
-                <Route path="/admin/assignments" element={<AssignmentsList />} />
+                <Route path="/admin/assignments" element={<Navigate to="/admin/assignments/subject-teachers" replace />} />
+                <Route path="/admin/assignments/class-teachers" element={<ClassTeachers />} />
+                <Route path="/admin/assignments/subject-teachers" element={<SubjectTeachers />} />
                 <Route path="/admin/assignments/add" element={<AddAssignment />} />
                 <Route path="/admin/assignments/:assignmentId/edit" element={<EditAssignment />} />
                 <Route path="/admin/academic-years" element={<AcademicYearsList />} />

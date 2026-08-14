@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSession } from "@/contexts/session-context";
 import { useAuth } from "@/contexts/auth-context";
+import { SchoolLogo } from "@/components/shared/SchoolLogo";
 
 interface ParentHeaderProps {
   onOpenMenu: () => void;
@@ -64,6 +65,10 @@ export function ParentHeader({ onOpenMenu }: ParentHeaderProps) {
       <Button variant="ghost" size="icon" onClick={onOpenMenu} className="rounded-xl lg:hidden" aria-label="Open navigation">
         <Menu className="size-5" />
       </Button>
+      
+      <div className="flex items-center gap-3">
+        <SchoolLogo size="small" variant="full" className="hidden sm:block" forceWhiteBackground />
+      </div>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-4">
         <div className="hidden text-right xl:block">
