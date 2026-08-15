@@ -35,19 +35,19 @@ const guardianSchema = z.object({
 const studentSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  middleName: z.string().optional(),
+  middleName: z.string().min(1, 'Middle name is required'),
   gender: z.nativeEnum(Gender),
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   admissionDate: z.string().min(1, 'Admission date is required'),
-  nationality: z.string().optional(),
-  state: z.string().optional(),
-  lga: z.string().optional(),
-  religion: z.string().optional(),
-  healthInfo: z.string().optional(),
-  bloodGroup: z.string().optional(),
-  sportHouse: z.string().optional(),
-  studentType: z.string().optional(),
-  address: z.string().optional(),
+  nationality: z.string().min(1, 'Nationality is required'),
+  state: z.string().min(1, 'State is required'),
+  lga: z.string().min(1, 'LGA is required'),
+  religion: z.string().min(1, 'Religion is required'),
+  healthInfo: z.string().min(1, 'Health info is required'),
+  bloodGroup: z.string().min(1, 'Blood group is required'),
+  sportHouse: z.string().min(1, 'Sport house is required'),
+  studentType: z.string().min(1, 'Student type is required'),
+  address: z.string().min(1, 'Address is required'),
   accountEmail: z.string().email('Invalid email address'),
   accountPhone: z.string().min(1, 'Phone number is required'),
   primaryGuardian: guardianSchema,
@@ -56,7 +56,6 @@ const studentSchema = z.object({
     .enum(['MARRIED', 'SINGLE', 'DIVORCED', 'WIDOWED', 'SEPARATED'])
     .optional(),
   classId: z.string().optional(),
-  sectionId: z.string().optional(),
 });
 
 type StudentFormData = z.infer<typeof studentSchema>;
@@ -64,9 +63,6 @@ type StudentFormData = z.infer<typeof studentSchema>;
 export default function AddStudent() {
   const navigate = useNavigate();
   const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
-  const [selectedClass, setSelectedClass] = useState('');
-  const [selectedSection, setSelectedSection] = useState('');
-  const [sections, setSections] = useState<any[]>([]);
   const [currentTerm, setCurrentTerm] = useState<any>(null);
   const [showSecondaryGuardian, setShowSecondaryGuardian] = useState(false);
 
@@ -85,29 +81,6 @@ export default function AddStudent() {
       setCurrentTerm(currentTermData.data);
     }
   }, [currentTermData]);
-
-  // Fetch sections when class is selected
-  useEffect(() => {
-    const fetchSections = async () => {
-      if (selectedClass) {
-        try {
-          const classResponse = await adminApi.getClassById(selectedClass);
-          if (classResponse.success && classResponse.data?.sections) {
-            setSections(classResponse.data.sections);
-          } else {
-            setSections([]);
-          }
-        } catch (err) {
-          console.error('Failed to fetch sections:', err);
-          setSections([]);
-        }
-      } else {
-        setSections([]);
-      }
-    };
-
-    fetchSections();
-  }, [selectedClass]);
 
   const {
     control,
@@ -141,15 +114,15 @@ export default function AddStudent() {
       formData.append('gender', data.gender);
       formData.append('dateOfBirth', data.dateOfBirth);
       formData.append('admissionDate', data.admissionDate);
-      formData.append('nationality', data.nationality || '');
-      formData.append('state', data.state || '');
-      formData.append('lga', data.lga || '');
-      formData.append('religion', data.religion || '');
-      formData.append('healthInfo', data.healthInfo || '');
-      formData.append('bloodGroup', data.bloodGroup || '');
-      formData.append('sportHouse', data.sportHouse || '');
-      formData.append('studentType', data.studentType || '');
-      formData.append('address', data.address || '');
+      formData.append('nationality', data.nationality);
+      formData.append('state', data.state);
+      formData.append('lga', data.lga);
+      formData.append('religion', data.religion);
+      formData.append('healthInfo', data.healthInfo);
+      formData.append('bloodGroup', data.bloodGroup);
+      formData.append('sportHouse', data.sportHouse);
+      formData.append('studentType', data.studentType);
+      formData.append('address', data.address);
 
       // Account credentials
       formData.append('accountEmail', data.accountEmail);
@@ -184,7 +157,6 @@ export default function AddStudent() {
         const enrollmentData = {
           studentId: studentResponse.data?.admissionNumber || '',
           classId: data.classId,
-          sectionId: data.sectionId || undefined,
           academicYear: currentTerm.session?.session || '',
           term:
             currentTerm.term?.toUpperCase().replace(' ', '_') || 'FIRST_TERM',
@@ -295,7 +267,7 @@ export default function AddStudent() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="middleName">Middle Name</Label>
+                    <Label htmlFor="middleName">Middle Name *</Label>
                     <Controller
                       name="middleName"
                       control={control}
@@ -303,6 +275,11 @@ export default function AddStudent() {
                         <Input id="middleName" {...field} />
                       )}
                     />
+                    {errors.middleName && (
+                      <p className="text-sm text-destructive">
+                        {errors.middleName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gender *</Label>
@@ -372,7 +349,7 @@ export default function AddStudent() {
                 </h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="nationality">Nationality</Label>
+                    <Label htmlFor="nationality">Nationality *</Label>
                     <Controller
                       name="nationality"
                       control={control}
@@ -380,43 +357,119 @@ export default function AddStudent() {
                         <Input id="nationality" {...field} />
                       )}
                     />
+                    {errors.nationality && (
+                      <p className="text-sm text-destructive">
+                        {errors.nationality.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
+                    <Label htmlFor="state">State *</Label>
                     <Controller
                       name="state"
                       control={control}
                       render={({ field }) => <Input id="state" {...field} />}
                     />
+                    {errors.state && (
+                      <p className="text-sm text-destructive">
+                        {errors.state.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lga">LGA</Label>
+                    <Label htmlFor="lga">LGA *</Label>
                     <Controller
                       name="lga"
                       control={control}
                       render={({ field }) => <Input id="lga" {...field} />}
                     />
+                    {errors.lga && (
+                      <p className="text-sm text-destructive">
+                        {errors.lga.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="religion">Religion</Label>
+                    <Label htmlFor="religion">Religion *</Label>
                     <Controller
                       name="religion"
                       control={control}
-                      render={({ field }) => <Input id="religion" {...field} />}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select religion" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Christianity">
+                              Christianity
+                            </SelectItem>
+                            <SelectItem value="Islam">Islam</SelectItem>
+                            <SelectItem value="Traditional">
+                              Traditional
+                            </SelectItem>
+                            <SelectItem value="Others">Others</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                     />
+                    {errors.religion && (
+                      <p className="text-sm text-destructive">
+                        {errors.religion.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="bloodGroup">Blood Group</Label>
+                    <Label htmlFor="healthInfo">Health Info *</Label>
+                    <Controller
+                      name="healthInfo"
+                      control={control}
+                      render={({ field }) => (
+                        <Input id="healthInfo" {...field} />
+                      )}
+                    />
+                    {errors.healthInfo && (
+                      <p className="text-sm text-destructive">
+                        {errors.healthInfo.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bloodGroup">Blood Group *</Label>
                     <Controller
                       name="bloodGroup"
                       control={control}
                       render={({ field }) => (
-                        <Input id="bloodGroup" {...field} />
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select blood group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="A+">A+</SelectItem>
+                            <SelectItem value="A-">A-</SelectItem>
+                            <SelectItem value="B+">B+</SelectItem>
+                            <SelectItem value="B-">B-</SelectItem>
+                            <SelectItem value="AB+">AB+</SelectItem>
+                            <SelectItem value="AB-">AB-</SelectItem>
+                            <SelectItem value="O+">O+</SelectItem>
+                            <SelectItem value="O-">O-</SelectItem>
+                          </SelectContent>
+                        </Select>
                       )}
                     />
+                    {errors.bloodGroup && (
+                      <p className="text-sm text-destructive">
+                        {errors.bloodGroup.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="studentType">Student Type</Label>
+                    <Label htmlFor="studentType">Student Type *</Label>
                     <Controller
                       name="studentType"
                       control={control}
@@ -435,6 +488,41 @@ export default function AddStudent() {
                         </Select>
                       )}
                     />
+                    {errors.studentType && (
+                      <p className="text-sm text-destructive">
+                        {errors.studentType.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sportHouse">Sport House *</Label>
+                    <Controller
+                      name="sportHouse"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select sport house" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Red">Red</SelectItem>
+                            <SelectItem value="Blue">Blue</SelectItem>
+                            <SelectItem value="Green">Green</SelectItem>
+                            <SelectItem value="Yellow">Yellow</SelectItem>
+                            <SelectItem value="Purple">Purple</SelectItem>
+                            <SelectItem value="Orange">Orange</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.sportHouse && (
+                      <p className="text-sm text-destructive">
+                        {errors.sportHouse.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -807,12 +895,17 @@ export default function AddStudent() {
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="address">Residential Address</Label>
+                  <Label htmlFor="address">Residential Address *</Label>
                   <Controller
                     name="address"
                     control={control}
                     render={({ field }) => <Input id="address" {...field} />}
                   />
+                  {errors.address && (
+                    <p className="text-sm text-destructive">
+                      {errors.address.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="maritalStatus">Marital Status</Label>
@@ -852,7 +945,7 @@ export default function AddStudent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="classId">Class</Label>
                   <Controller
@@ -860,10 +953,7 @@ export default function AddStudent() {
                     control={control}
                     render={({ field }) => (
                       <Select
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setSelectedClass(value);
-                        }}
+                        onValueChange={field.onChange}
                         value={field.value}
                       >
                         <SelectTrigger>
@@ -873,31 +963,6 @@ export default function AddStudent() {
                           {classes?.data?.map((cls: any) => (
                             <SelectItem key={cls.id} value={cls.id}>
                               {cls.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sectionId">Section</Label>
-                  <Controller
-                    name="sectionId"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={!selectedClass}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select section" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sections.map((section: any) => (
-                            <SelectItem key={section.id} value={section.id}>
-                              {section.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
