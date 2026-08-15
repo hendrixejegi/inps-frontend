@@ -1,5 +1,4 @@
 import {
-  DollarSign,
   FileText,
   Receipt,
   BookOpen,
@@ -13,6 +12,7 @@ import {
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SchoolLogo } from "@/components/shared/SchoolLogo";
 
 const navigation = [
   { label: "Dashboard", href: "/bursary/dashboard", icon: LayoutDashboard },
@@ -20,7 +20,7 @@ const navigation = [
   { label: "Fee Collections", href: "/bursary/fee-collections", icon: Receipt },
   { label: "Invoices", href: "/bursary/invoices", icon: FileText },
   { label: "Expenses", href: "/bursary/expenses", icon: TrendingUp },
-  { label: "Income", href: "/bursary/income", icon: DollarSign },
+  { label: "Income", href: "/bursary/income", icon: Receipt },
   { label: "Payments", href: "/bursary/payments/reconciliation", icon: CreditCard },
   { label: "Payment Reports", href: "/bursary/payments/reports", icon: BarChart3 },
   { label: "Book Prices", href: "/bursary/book-prices", icon: BookOpen },
@@ -37,9 +37,7 @@ export function BursarySidebar({ collapsed = false, onCollapse, onNavigate }: Bu
   return (
     <aside className="flex h-full flex-col bg-primary text-primary-foreground">
       <div className="flex h-20 items-center gap-3 border-b border-white/10 px-5">
-        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground shadow-sm">
-          <DollarSign className="size-5" aria-hidden="true" />
-        </div>
+        <SchoolLogo size="medium" variant={collapsed ? "icon" : "full"} showBackground backgroundClassName="bg-accent text-accent-foreground" forceWhiteBackground />
         {!collapsed && (
           <div className="min-w-0">
             <p className="truncate text-base font-bold tracking-wide">INPS Portal</p>

@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import { Staff, CreateStaffRequest, UpdateStaffRequest, StaffLoginRequest, ChangePasswordRequest } from "@/lib/types/staff";
+import { Staff, CreateStaffRequest, UpdateStaffRequest, StaffLoginRequest, ChangePasswordRequest, StaffFinancial, UpdateStaffFinancialRequest } from "@/lib/types/staff";
 import { ApiResponse, PaginatedResponse } from "@/lib/types/common";
 
 export const staffApi = {
@@ -40,7 +40,15 @@ export const staffApi = {
   },
 
   async updateStaff(staffId: string, data: UpdateStaffRequest): Promise<ApiResponse<Staff>> {
-    return apiClient.put<ApiResponse<Staff>>(`/api/admin/staff/${staffId}`, data);
+    return apiClient.patch<ApiResponse<Staff>>(`/api/admin/staff/${staffId}`, data);
+  },
+
+  async getStaffFinancial(staffId: string): Promise<ApiResponse<StaffFinancial>> {
+    return apiClient.get<ApiResponse<StaffFinancial>>(`/api/admin/staff/${staffId}/financial`);
+  },
+
+  async updateStaffFinancial(staffId: string, data: UpdateStaffFinancialRequest): Promise<ApiResponse<StaffFinancial>> {
+    return apiClient.patch<ApiResponse<StaffFinancial>>(`/api/admin/staff/${staffId}/financial`, data);
   },
 
   async deactivateStaff(staffId: string): Promise<ApiResponse> {

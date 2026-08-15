@@ -161,6 +161,7 @@ export default function StaffList() {
                         <TableHead>Staff ID</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Status</TableHead>
@@ -172,9 +173,10 @@ export default function StaffList() {
                         <TableRow key={member.id}>
                           <TableCell className="font-medium">{member.staffId}</TableCell>
                           <TableCell>
-                            {member.firstName} {member.lastName}
+                            {member.firstName} {member.middleName && member.middleName + " "}{member.lastName}
                           </TableCell>
                           <TableCell>{member.email}</TableCell>
+                          <TableCell>{member.phone}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{member.role}</Badge>
                           </TableCell>

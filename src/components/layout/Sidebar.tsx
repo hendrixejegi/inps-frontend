@@ -3,28 +3,30 @@ import {
   Building2,
   CalendarDays,
   ChevronLeft,
-  ClipboardList,
-  GraduationCap,
   LayoutDashboard,
   Settings,
   UserRoundCheck,
   UsersRound,
   WalletCards,
+  User,
+  Layers,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SchoolLogo } from "@/components/shared/SchoolLogo";
 
 const navigation = [
   { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Students", href: "/admin/students", icon: GraduationCap },
   { label: "Staff", href: "/admin/staff", icon: UserRoundCheck },
   { label: "Parents", href: "/admin/parents", icon: UsersRound },
   { label: "Classes", href: "/admin/classes", icon: Building2 },
   { label: "Subjects", href: "/admin/subjects", icon: BookOpenCheck },
-  { label: "Assignments", href: "/admin/assignments", icon: ClipboardList },
+  { label: "Class Teachers", href: "/admin/assignments/class-teachers", icon: User },
+  { label: "Subject Teachers", href: "/admin/assignments/subject-teachers", icon: Layers },
   { label: "Academic Years", href: "/admin/academic-years", icon: CalendarDays },
   { label: "Results", href: "/admin/results", icon: WalletCards },
+  { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -37,9 +39,7 @@ export function Sidebar({ collapsed = false, onCollapse, onNavigate }: SidebarPr
   return (
     <aside className="flex h-full flex-col bg-primary text-primary-foreground">
       <div className="flex h-20 items-center gap-3 border-b border-white/10 px-5">
-        <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground shadow-sm">
-          <GraduationCap className="size-5" aria-hidden="true" />
-        </div>
+        <SchoolLogo size="medium" variant={collapsed ? "icon" : "full"} showBackground backgroundClassName="bg-accent text-accent-foreground" forceWhiteBackground />
         {!collapsed && (
           <div className="min-w-0">
             <p className="truncate text-base font-bold tracking-wide">INPS Portal</p>

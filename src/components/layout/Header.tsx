@@ -12,6 +12,7 @@ import {
 import { useSession } from "@/contexts/session-context";
 import { useAuth } from "@/contexts/auth-context";
 import GlobalSearch from "@/components/admin/GlobalSearch";
+import { SchoolLogo } from "@/components/shared/SchoolLogo";
 
 interface HeaderProps {
   onOpenMenu: () => void;
@@ -40,8 +41,8 @@ export function Header({ onOpenMenu }: HeaderProps) {
     
     // Check if user is Parent
     if ("fatherFirstName" in user) {
-      const firstName = user.fatherFirstName || user.motherFirstName || "";
-      const lastName = user.fatherLastName || user.motherLastName || "";
+      const firstName = user.fatherFirstName || "";
+      const lastName = user.fatherLastName || "";
       if (firstName && lastName) {
         return `${firstName[0]}${lastName[0]}`.toUpperCase();
       }
@@ -66,8 +67,8 @@ export function Header({ onOpenMenu }: HeaderProps) {
     
     // Check if user is Parent
     if ("fatherFirstName" in user) {
-      const firstName = user.fatherFirstName || user.motherFirstName || "";
-      const lastName = user.fatherLastName || user.motherLastName || "";
+      const firstName = user.fatherFirstName || "";
+      const lastName = user.fatherLastName || "";
       if (firstName && lastName) {
         return `${firstName} ${lastName}`;
       }
@@ -102,6 +103,10 @@ export function Header({ onOpenMenu }: HeaderProps) {
       <Button variant="ghost" size="icon" onClick={onOpenMenu} className="rounded-xl lg:hidden" aria-label="Open navigation">
         <Menu className="size-5" />
       </Button>
+      
+      <div className="flex items-center gap-3">
+        <SchoolLogo size="small" variant="full" className="hidden sm:block" forceWhiteBackground />
+      </div>
 
       <div className="relative hidden max-w-md flex-1 sm:block">
         <GlobalSearch />

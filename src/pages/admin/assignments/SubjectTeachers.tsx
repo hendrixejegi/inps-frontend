@@ -13,28 +13,33 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { Plus, MoreHorizontal, Edit, Trash2, Filter, Layers, Users, BookOpen } from "lucide-react";
+import { Plus, MoreHorizontal, Trash2, Filter, Layers, Users, BookOpen } from "lucide-react";
 import { Term, SubjectAssignmentStatus } from "@/lib/types/common";
 
-export default function AssignmentsList() {
-  const navigate = useNavigate();
+export default function SubjectTeachers() {
   const queryClient = useQueryClient();
   const [selectedAssignments, setSelectedAssignments] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"all" | "byTeacher" | "byClass">("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
   const [filters, setFilters] = useState({
     classId: "",
     subjectId: "",
@@ -42,6 +47,14 @@ export default function AssignmentsList() {
     academicYear: "",
     term: "" as Term,
     status: "" as SubjectAssignmentStatus,
+  });
+  const [bulkAssignData, setBulkAssignData] = useState({
+    subjectId: "",
+    teacherId: "",
+    selectedClassIds: new Set<string>(),
+    term: Term.FIRST_TERM,
+    academicYear: "",
+    termId: "",
   });
 
   const { data: assignments, isLoading, error } = useQuery({
@@ -57,6 +70,11 @@ export default function AssignmentsList() {
   const { data: subjects } = useQuery({
     queryKey: ["subjects"],
     queryFn: () => adminApi.getAllSubjects(),
+  });
+
+  const { data: staff } = useQuery({
+    queryKey: ["staff"],
+    queryFn: () => adminApi.getAllStaff(),
   });
 
   const { data: currentSession } = useQuery({
@@ -79,6 +97,33 @@ export default function AssignmentsList() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to remove assignment");
+    },
+  });
+
+  const bulkAssignMutation = useMutation({
+    mutationFn: (data: {
+      classIds: string[];
+      subjectId: string;
+      teacherId: string;
+      academicYear: string;
+      term: Term;
+      termId: string;
+    }) => adminApi.bulkCreateAssignment(data),
+    onSuccess: () => {
+      toast.success("Subject assignments created successfully");
+      setBulkAssignDialogOpen(false);
+      setBulkAssignData({
+        subjectId: "",
+        teacherId: "",
+        selectedClassIds: new Set<string>(),
+        term: Term.FIRST_TERM,
+        academicYear: "",
+        termId: "",
+      });
+      queryClient.invalidateQueries({ queryKey: ["assignments"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create subject assignments");
     },
   });
 
@@ -113,6 +158,22 @@ export default function AssignmentsList() {
     setSelectedAssignments(newSelected);
   };
 
+  const handleBulkAssign = () => {
+    const classIds = Array.from(bulkAssignData.selectedClassIds);
+    if (!bulkAssignData.subjectId || !bulkAssignData.teacherId || classIds.length === 0) {
+      toast.error("Please select subject, teacher, and at least one class");
+      return;
+    }
+    bulkAssignMutation.mutate({
+      classIds,
+      subjectId: bulkAssignData.subjectId,
+      teacherId: bulkAssignData.teacherId,
+      academicYear: bulkAssignData.academicYear,
+      term: bulkAssignData.term,
+      termId: bulkAssignData.termId,
+    });
+  };
+
   const groupedByTeacher = assignments?.data?.reduce((acc, assignment) => {
     const teacherId = assignment.teacherId;
     if (!acc[teacherId]) {
@@ -142,12 +203,14 @@ export default function AssignmentsList() {
     }
   };
 
+  const teachers = staff?.data?.filter((s) => s.role === "TEACHER") || [];
+
   return (
     <AdminLayout>
       <div className="mx-auto max-w-[1500px] space-y-6">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Subject Assignments</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Subject Teacher Assignments</h1>
             <p className="text-sm text-muted-foreground">Manage teacher-subject-class assignments</p>
           </div>
           <div className="flex gap-2">
@@ -164,9 +227,122 @@ export default function AssignmentsList() {
                 <SelectItem value="byClass">By Class</SelectItem>
               </SelectContent>
             </Select>
-            <Button className="gap-2" onClick={() => navigate("/admin/assignments/add")}>
-              <Plus className="size-4" /> Add Assignment
-            </Button>
+            <Dialog open={bulkAssignDialogOpen} onOpenChange={setBulkAssignDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2">
+                  <Plus className="size-4" /> Bulk Assign
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Bulk Subject Assignment</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject *</Label>
+                      <Select
+                        value={bulkAssignData.subjectId}
+                        onValueChange={(value) => setBulkAssignData({ ...bulkAssignData, subjectId: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {subjects?.data?.map((subject) => (
+                            <SelectItem key={subject.id} value={subject.id}>
+                              {subject.subjectCode} - {subject.subjectName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="teacher">Teacher *</Label>
+                      <Select
+                        value={bulkAssignData.teacherId}
+                        onValueChange={(value) => setBulkAssignData({ ...bulkAssignData, teacherId: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select teacher" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teachers.map((teacher) => (
+                            <SelectItem key={teacher.id} value={teacher.id}>
+                              {teacher.firstName} {teacher.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Classes *</Label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                      {classes?.data?.map((cls) => (
+                        <div key={cls.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`bulk-class-${cls.id}`}
+                            checked={bulkAssignData.selectedClassIds.has(cls.id)}
+                            onCheckedChange={(checked) => {
+                              const isChecked = typeof checked === 'boolean' ? checked : checked === 'true';
+                              const newSelected = new Set(bulkAssignData.selectedClassIds);
+                              if (isChecked) {
+                                newSelected.add(cls.id);
+                              } else {
+                                newSelected.delete(cls.id);
+                              }
+                              setBulkAssignData({ ...bulkAssignData, selectedClassIds: newSelected });
+                            }}
+                          />
+                          <Label htmlFor={`bulk-class-${cls.id}`} className="text-sm cursor-pointer">
+                            {cls.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="term">Term *</Label>
+                      <Select
+                        value={bulkAssignData.term || Term.FIRST_TERM}
+                        onValueChange={(value) => setBulkAssignData({ ...bulkAssignData, term: value as Term })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select term" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={Term.FIRST_TERM}>First Term</SelectItem>
+                          <SelectItem value={Term.SECOND_TERM}>Second Term</SelectItem>
+                          <SelectItem value={Term.THIRD_TERM}>Third Term</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="academicYear">Academic Year *</Label>
+                      <Input
+                        id="academicYear"
+                        value={bulkAssignData.academicYear}
+                        onChange={(e) => setBulkAssignData({ ...bulkAssignData, academicYear: e.target.value })}
+                        placeholder="e.g., 2024/2025"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setBulkAssignDialogOpen(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleBulkAssign}
+                      disabled={bulkAssignMutation.isPending}
+                    >
+                      {bulkAssignMutation.isPending ? "Assigning..." : "Assign"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -273,14 +449,12 @@ export default function AssignmentsList() {
         {/* Main Content */}
         <Card>
           <CardHeader>
-            <CardTitle>Assignments</CardTitle>
+            <CardTitle>Subject Assignments</CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
+              <div className="text-center py-8 text-muted-foreground">
+                Loading assignments...
               </div>
             ) : error ? (
               <div className="text-center py-8 text-destructive">
@@ -288,7 +462,7 @@ export default function AssignmentsList() {
               </div>
             ) : !assignments?.data || assignments.data.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No assignments found. Create your first assignment to get started.
+                No subject assignments found. Create your first assignment to get started.
               </div>
             ) : viewMode === "all" ? (
               <div className="rounded-md border">
@@ -339,9 +513,6 @@ export default function AssignmentsList() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => navigate(`/admin/assignments/${assignment.id}/edit`)}>
-                                <Edit className="mr-2 size-4" /> Edit
-                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => handleDelete(assignment.id)}
                                 className="text-destructive"
@@ -394,9 +565,6 @@ export default function AssignmentsList() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => navigate(`/admin/assignments/${assignment.id}/edit`)}>
-                                      <Edit className="mr-2 size-4" /> Edit
-                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => handleDelete(assignment.id)}
                                       className="text-destructive"
@@ -454,9 +622,6 @@ export default function AssignmentsList() {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => navigate(`/admin/assignments/${assignment.id}/edit`)}>
-                                      <Edit className="mr-2 size-4" /> Edit
-                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => handleDelete(assignment.id)}
                                       className="text-destructive"
