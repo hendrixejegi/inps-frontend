@@ -26,7 +26,6 @@ const navigation = [
   { label: "Subject Teachers", href: "/admin/assignments/subject-teachers", icon: Layers },
   { label: "Academic Years", href: "/admin/academic-years", icon: CalendarDays },
   { label: "Results", href: "/admin/results", icon: WalletCards },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 interface SidebarProps {
