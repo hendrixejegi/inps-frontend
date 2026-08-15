@@ -1,38 +1,46 @@
-import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { adminApi } from "@/lib/api/admin";
-import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { adminApi } from '@/lib/api/admin';
+import { AdminLayout } from '@/components/layout/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
+import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const guardianSchema = z.object({
-  relationship: z.string().min(1, "Relationship is required"),
+  relationship: z.string().min(1, 'Relationship is required'),
   title: z.string().optional(),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  phone: z.string().min(1, "Phone number is required"),
-  email: z.string().email("Invalid email address").optional(),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  phone: z.string().min(1, 'Phone number is required'),
+  email: z.string().email('Invalid email address').or(z.literal('')).optional(),
   occupation: z.string().optional(),
   address: z.string().optional(),
 });
 
 const parentSchema = z.object({
-  accountEmail: z.string().email("Invalid email address"),
-  accountPhone: z.string().min(1, "Phone number is required"),
+  accountEmail: z.string().email('Invalid email address'),
+  accountPhone: z.string().min(1, 'Phone number is required'),
   primaryGuardian: guardianSchema,
   secondaryGuardian: guardianSchema.optional(),
   address: z.string().optional(),
-  maritalStatus: z.enum(["MARRIED", "SINGLE", "DIVORCED", "WIDOWED", "SEPARATED"]).optional(),
+  maritalStatus: z
+    .enum(['MARRIED', 'SINGLE', 'DIVORCED', 'WIDOWED', 'SEPARATED'])
+    .optional(),
 });
 
 type ParentFormData = z.infer<typeof parentSchema>;
@@ -43,7 +51,7 @@ export default function EditParent() {
   const [showSecondaryGuardian, setShowSecondaryGuardian] = useState(false);
 
   const { data: parent, isLoading: parentLoading } = useQuery({
-    queryKey: ["parent", id],
+    queryKey: ['parent', id],
     queryFn: () => adminApi.getParentById(id!),
     enabled: !!id,
   });
@@ -59,17 +67,17 @@ export default function EditParent() {
 
   useEffect(() => {
     if (parent?.data) {
-      setValue("accountEmail", parent.data.accountEmail);
-      setValue("accountPhone", parent.data.accountPhone);
-      setValue("address", parent.data.address || "");
-      setValue("maritalStatus", parent.data.maritalStatus || "");
-      
+      setValue('accountEmail', parent.data.accountEmail);
+      setValue('accountPhone', parent.data.accountPhone);
+      setValue('address', parent.data.address || '');
+      setValue('maritalStatus', parent.data.maritalStatus || '');
+
       if (parent.data.primaryGuardian) {
-        setValue("primaryGuardian", parent.data.primaryGuardian);
+        setValue('primaryGuardian', parent.data.primaryGuardian);
       }
-      
+
       if (parent.data.secondaryGuardian) {
-        setValue("secondaryGuardian", parent.data.secondaryGuardian);
+        setValue('secondaryGuardian', parent.data.secondaryGuardian);
         setShowSecondaryGuardian(true);
       }
     }
@@ -78,11 +86,11 @@ export default function EditParent() {
   const updateParentMutation = useMutation({
     mutationFn: (data: ParentFormData) => adminApi.updateParent(id!, data),
     onSuccess: () => {
-      toast.success("Parent updated successfully");
-      navigate("/admin/parents");
+      toast.success('Parent updated successfully');
+      navigate('/admin/parents');
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to update parent");
+      toast.error(error.message || 'Failed to update parent');
     },
   });
 
@@ -92,19 +100,19 @@ export default function EditParent() {
 
   const addSecondaryGuardian = () => {
     setShowSecondaryGuardian(true);
-    setValue("secondaryGuardian", {
-      relationship: "Mother",
-      firstName: "",
-      lastName: "",
-      phone: "",
-      email: "",
-      occupation: "",
+    setValue('secondaryGuardian', {
+      relationship: 'Mother',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      occupation: '',
     });
   };
 
   const removeSecondaryGuardian = () => {
     setShowSecondaryGuardian(false);
-    setValue("secondaryGuardian", undefined);
+    setValue('secondaryGuardian', undefined);
   };
 
   if (parentLoading) {
@@ -112,12 +120,18 @@ export default function EditParent() {
       <AdminLayout>
         <div className="mx-auto max-w-[1500px] space-y-6">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/admin/parents")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/admin/parents')}
+            >
               <ArrowLeft className="size-4" />
             </Button>
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Edit Parent</h1>
-              <p className="text-sm text-muted-foreground">Loading parent information...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading parent information...
+              </p>
             </div>
           </div>
           <Card>
@@ -138,7 +152,11 @@ export default function EditParent() {
       <AdminLayout>
         <div className="mx-auto max-w-[1500px] space-y-6">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/admin/parents")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/admin/parents')}
+            >
               <ArrowLeft className="size-4" />
             </Button>
             <div>
@@ -148,7 +166,9 @@ export default function EditParent() {
           </div>
           <Card>
             <CardContent className="p-6">
-              <p className="text-center text-muted-foreground">Parent not found</p>
+              <p className="text-center text-muted-foreground">
+                Parent not found
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -160,13 +180,18 @@ export default function EditParent() {
     <AdminLayout>
       <div className="mx-auto max-w-[1500px] space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/parents")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/admin/parents')}
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Edit Parent</h1>
             <p className="text-sm text-muted-foreground">
-              {parent.data.primaryGuardian?.firstName} {parent.data.primaryGuardian?.lastName}
+              {parent.data.primaryGuardian?.firstName}{' '}
+              {parent.data.primaryGuardian?.lastName}
             </p>
           </div>
         </div>
@@ -187,7 +212,11 @@ export default function EditParent() {
                       <Input id="accountEmail" {...field} />
                     )}
                   />
-                  {errors.accountEmail && <p className="text-sm text-destructive">{errors.accountEmail.message}</p>}
+                  {errors.accountEmail && (
+                    <p className="text-sm text-destructive">
+                      {errors.accountEmail.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="accountPhone">Account Phone *</Label>
@@ -198,7 +227,11 @@ export default function EditParent() {
                       <Input id="accountPhone" {...field} />
                     )}
                   />
-                  {errors.accountPhone && <p className="text-sm text-destructive">{errors.accountPhone.message}</p>}
+                  {errors.accountPhone && (
+                    <p className="text-sm text-destructive">
+                      {errors.accountPhone.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </form>
@@ -208,18 +241,26 @@ export default function EditParent() {
         <Card>
           <CardHeader>
             <CardTitle>Primary Guardian (Account Holder)</CardTitle>
-            <p className="text-sm text-muted-foreground">This guardian will receive portal login credentials, invoices, and SMS alerts</p>
+            <p className="text-sm text-muted-foreground">
+              This guardian will receive portal login credentials, invoices, and
+              SMS alerts
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="primaryGuardian.relationship">Relationship *</Label>
+                  <Label htmlFor="primaryGuardian.relationship">
+                    Relationship *
+                  </Label>
                   <Controller
                     name="primaryGuardian.relationship"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select relationship" />
                         </SelectTrigger>
@@ -229,12 +270,18 @@ export default function EditParent() {
                           <SelectItem value="Guardian">Guardian</SelectItem>
                           <SelectItem value="Uncle">Uncle</SelectItem>
                           <SelectItem value="Aunt">Aunt</SelectItem>
-                          <SelectItem value="Grandparent">Grandparent</SelectItem>
+                          <SelectItem value="Grandparent">
+                            Grandparent
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     )}
                   />
-                  {errors.primaryGuardian?.relationship && <p className="text-sm text-destructive">{errors.primaryGuardian.relationship.message}</p>}
+                  {errors.primaryGuardian?.relationship && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.relationship.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.title">Title</Label>
@@ -242,7 +289,10 @@ export default function EditParent() {
                     name="primaryGuardian.title"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select title" />
                         </SelectTrigger>
@@ -261,7 +311,9 @@ export default function EditParent() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="primaryGuardian.firstName">First Name *</Label>
+                  <Label htmlFor="primaryGuardian.firstName">
+                    First Name *
+                  </Label>
                   <Controller
                     name="primaryGuardian.firstName"
                     control={control}
@@ -269,7 +321,11 @@ export default function EditParent() {
                       <Input id="primaryGuardian.firstName" {...field} />
                     )}
                   />
-                  {errors.primaryGuardian?.firstName && <p className="text-sm text-destructive">{errors.primaryGuardian.firstName.message}</p>}
+                  {errors.primaryGuardian?.firstName && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.firstName.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.lastName">Last Name *</Label>
@@ -280,7 +336,11 @@ export default function EditParent() {
                       <Input id="primaryGuardian.lastName" {...field} />
                     )}
                   />
-                  {errors.primaryGuardian?.lastName && <p className="text-sm text-destructive">{errors.primaryGuardian.lastName.message}</p>}
+                  {errors.primaryGuardian?.lastName && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.lastName.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.phone">Phone Number *</Label>
@@ -291,7 +351,11 @@ export default function EditParent() {
                       <Input id="primaryGuardian.phone" {...field} />
                     )}
                   />
-                  {errors.primaryGuardian?.phone && <p className="text-sm text-destructive">{errors.primaryGuardian.phone.message}</p>}
+                  {errors.primaryGuardian?.phone && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.phone.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.email">Email Address</Label>
@@ -302,7 +366,11 @@ export default function EditParent() {
                       <Input id="primaryGuardian.email" {...field} />
                     )}
                   />
-                  {errors.primaryGuardian?.email && <p className="text-sm text-destructive">{errors.primaryGuardian.email.message}</p>}
+                  {errors.primaryGuardian?.email && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.email.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.occupation">Occupation</Label>
@@ -335,7 +403,11 @@ export default function EditParent() {
           </CardHeader>
           <CardContent>
             {!showSecondaryGuardian ? (
-              <Button type="button" variant="outline" onClick={addSecondaryGuardian}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addSecondaryGuardian}
+              >
                 <Plus className="mr-2 size-4" />
                 Add Secondary Guardian
               </Button>
@@ -343,12 +415,17 @@ export default function EditParent() {
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.relationship">Relationship *</Label>
+                    <Label htmlFor="secondaryGuardian.relationship">
+                      Relationship *
+                    </Label>
                     <Controller
                       name="secondaryGuardian.relationship"
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select relationship" />
                           </SelectTrigger>
@@ -358,15 +435,23 @@ export default function EditParent() {
                             <SelectItem value="Guardian">Guardian</SelectItem>
                             <SelectItem value="Uncle">Uncle</SelectItem>
                             <SelectItem value="Aunt">Aunt</SelectItem>
-                            <SelectItem value="Grandparent">Grandparent</SelectItem>
+                            <SelectItem value="Grandparent">
+                              Grandparent
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       )}
                     />
-                    {errors.secondaryGuardian?.relationship && <p className="text-sm text-destructive">{errors.secondaryGuardian.relationship.message}</p>}
+                    {errors.secondaryGuardian?.relationship && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.relationship.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.firstName">First Name *</Label>
+                    <Label htmlFor="secondaryGuardian.firstName">
+                      First Name *
+                    </Label>
                     <Controller
                       name="secondaryGuardian.firstName"
                       control={control}
@@ -374,10 +459,16 @@ export default function EditParent() {
                         <Input id="secondaryGuardian.firstName" {...field} />
                       )}
                     />
-                    {errors.secondaryGuardian?.firstName && <p className="text-sm text-destructive">{errors.secondaryGuardian.firstName.message}</p>}
+                    {errors.secondaryGuardian?.firstName && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.firstName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.lastName">Last Name *</Label>
+                    <Label htmlFor="secondaryGuardian.lastName">
+                      Last Name *
+                    </Label>
                     <Controller
                       name="secondaryGuardian.lastName"
                       control={control}
@@ -385,10 +476,16 @@ export default function EditParent() {
                         <Input id="secondaryGuardian.lastName" {...field} />
                       )}
                     />
-                    {errors.secondaryGuardian?.lastName && <p className="text-sm text-destructive">{errors.secondaryGuardian.lastName.message}</p>}
+                    {errors.secondaryGuardian?.lastName && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.lastName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.phone">Phone Number *</Label>
+                    <Label htmlFor="secondaryGuardian.phone">
+                      Phone Number *
+                    </Label>
                     <Controller
                       name="secondaryGuardian.phone"
                       control={control}
@@ -396,10 +493,16 @@ export default function EditParent() {
                         <Input id="secondaryGuardian.phone" {...field} />
                       )}
                     />
-                    {errors.secondaryGuardian?.phone && <p className="text-sm text-destructive">{errors.secondaryGuardian.phone.message}</p>}
+                    {errors.secondaryGuardian?.phone && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.phone.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.email">Email Address</Label>
+                    <Label htmlFor="secondaryGuardian.email">
+                      Email Address
+                    </Label>
                     <Controller
                       name="secondaryGuardian.email"
                       control={control}
@@ -407,10 +510,16 @@ export default function EditParent() {
                         <Input id="secondaryGuardian.email" {...field} />
                       )}
                     />
-                    {errors.secondaryGuardian?.email && <p className="text-sm text-destructive">{errors.secondaryGuardian.email.message}</p>}
+                    {errors.secondaryGuardian?.email && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.email.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.occupation">Occupation</Label>
+                    <Label htmlFor="secondaryGuardian.occupation">
+                      Occupation
+                    </Label>
                     <Controller
                       name="secondaryGuardian.occupation"
                       control={control}
@@ -420,7 +529,11 @@ export default function EditParent() {
                     />
                   </div>
                 </div>
-                <Button type="button" variant="destructive" onClick={removeSecondaryGuardian}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={removeSecondaryGuardian}
+                >
                   <Trash2 className="mr-2 size-4" />
                   Remove Secondary Guardian
                 </Button>
@@ -441,9 +554,7 @@ export default function EditParent() {
                   <Controller
                     name="address"
                     control={control}
-                    render={({ field }) => (
-                      <Input id="address" {...field} />
-                    )}
+                    render={({ field }) => <Input id="address" {...field} />}
                   />
                 </div>
                 <div className="space-y-2">
@@ -452,7 +563,10 @@ export default function EditParent() {
                     name="maritalStatus"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select marital status" />
                         </SelectTrigger>
@@ -473,17 +587,25 @@ export default function EditParent() {
         </Card>
 
         <div className="flex gap-4 justify-end">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/parents")}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/admin/parents')}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} onClick={handleSubmit(onSubmit)}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            onClick={handleSubmit(onSubmit)}
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
                 Updating...
               </>
             ) : (
-              "Update Parent"
+              'Update Parent'
             )}
           </Button>
         </div>

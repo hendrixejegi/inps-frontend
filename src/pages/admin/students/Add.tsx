@@ -1,55 +1,61 @@
-import { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { adminApi } from "@/lib/api/admin";
-import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
-import { Gender } from "@/lib/types/common";
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { adminApi } from '@/lib/api/admin';
+import { AdminLayout } from '@/components/layout/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
+import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Gender } from '@/lib/types/common';
 
 const guardianSchema = z.object({
-  relationship: z.string().min(1, "Relationship is required"),
+  relationship: z.string().min(1, 'Relationship is required'),
   title: z.string().optional(),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  phone: z.string().optional(), // Make optional since account phone is used
-  email: z.string().email("Invalid email address").optional(), // Make optional since account email is used
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  phone: z.string().or(z.literal('')).optional(), // Make optional since account phone is used
+  email: z.string().email('Invalid email address').or(z.literal('')).optional(), // Make optional since account email is used
   occupation: z.string().optional(),
   address: z.string().optional(),
 });
 
 const studentSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  middleName: z.string().optional(),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  middleName: z.string().min(1, 'Middle name is required'),
   gender: z.nativeEnum(Gender),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-  admissionDate: z.string().min(1, "Admission date is required"),
-  nationality: z.string().optional(),
-  state: z.string().optional(),
-  lga: z.string().optional(),
-  religion: z.string().optional(),
-  healthInfo: z.string().optional(),
-  bloodGroup: z.string().optional(),
-  sportHouse: z.string().optional(),
-  studentType: z.string().optional(),
-  address: z.string().optional(),
-  accountEmail: z.string().email("Invalid email address"),
-  accountPhone: z.string().min(1, "Phone number is required"),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  admissionDate: z.string().min(1, 'Admission date is required'),
+  nationality: z.string().min(1, 'Nationality is required'),
+  state: z.string().min(1, 'State is required'),
+  lga: z.string().min(1, 'LGA is required'),
+  religion: z.string().min(1, 'Religion is required'),
+  healthInfo: z.string().min(1, 'Health info is required'),
+  bloodGroup: z.string().min(1, 'Blood group is required'),
+  sportHouse: z.string().min(1, 'Sport house is required'),
+  studentType: z.string().min(1, 'Student type is required'),
+  address: z.string().min(1, 'Address is required'),
+  accountEmail: z.string().email('Invalid email address'),
+  accountPhone: z.string().min(1, 'Phone number is required'),
   primaryGuardian: guardianSchema,
   secondaryGuardian: guardianSchema.optional(),
-  address: z.string().optional(),
-  maritalStatus: z.enum(["MARRIED", "SINGLE", "DIVORCED", "WIDOWED", "SEPARATED"]).optional(),
+  maritalStatus: z
+    .enum(['MARRIED', 'SINGLE', 'DIVORCED', 'WIDOWED', 'SEPARATED'])
+    .optional(),
   classId: z.string().optional(),
-  sectionId: z.string().optional(),
 });
 
 type StudentFormData = z.infer<typeof studentSchema>;
@@ -57,19 +63,16 @@ type StudentFormData = z.infer<typeof studentSchema>;
 export default function AddStudent() {
   const navigate = useNavigate();
   const [passportPhoto, setPassportPhoto] = useState<File | null>(null);
-  const [selectedClass, setSelectedClass] = useState("");
-  const [selectedSection, setSelectedSection] = useState("");
-  const [sections, setSections] = useState<any[]>([]);
   const [currentTerm, setCurrentTerm] = useState<any>(null);
   const [showSecondaryGuardian, setShowSecondaryGuardian] = useState(false);
 
   const { data: classes, isLoading: classesLoading } = useQuery({
-    queryKey: ["classes"],
+    queryKey: ['classes'],
     queryFn: () => adminApi.getAllClasses(),
   });
 
   const { data: currentTermData } = useQuery({
-    queryKey: ["currentTerm"],
+    queryKey: ['currentTerm'],
     queryFn: () => adminApi.getCurrentTerm(),
   });
 
@@ -78,29 +81,6 @@ export default function AddStudent() {
       setCurrentTerm(currentTermData.data);
     }
   }, [currentTermData]);
-
-  // Fetch sections when class is selected
-  useEffect(() => {
-    const fetchSections = async () => {
-      if (selectedClass) {
-        try {
-          const classResponse = await adminApi.getClassById(selectedClass);
-          if (classResponse.success && classResponse.data?.sections) {
-            setSections(classResponse.data.sections);
-          } else {
-            setSections([]);
-          }
-        } catch (err) {
-          console.error('Failed to fetch sections:', err);
-          setSections([]);
-        }
-      } else {
-        setSections([]);
-      }
-    };
-
-    fetchSections();
-  }, [selectedClass]);
 
   const {
     control,
@@ -112,13 +92,13 @@ export default function AddStudent() {
     defaultValues: {
       gender: Gender.MALE,
       primaryGuardian: {
-        relationship: "Father",
-        title: "Mr.",
-        firstName: "",
-        lastName: "",
-        phone: "",
-        email: "",
-        occupation: "",
+        relationship: 'Father',
+        title: 'Mr.',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        email: '',
+        occupation: '',
       },
     },
   });
@@ -126,30 +106,30 @@ export default function AddStudent() {
   const createStudentMutation = useMutation({
     mutationFn: async (data: StudentFormData) => {
       const formData = new FormData();
-      
+
       // Student data
-      formData.append("firstName", data.firstName);
-      formData.append("lastName", data.lastName);
-      formData.append("middleName", data.middleName || "");
-      formData.append("gender", data.gender);
-      formData.append("dateOfBirth", data.dateOfBirth);
-      formData.append("admissionDate", data.admissionDate);
-      formData.append("nationality", data.nationality || "");
-      formData.append("state", data.state || "");
-      formData.append("lga", data.lga || "");
-      formData.append("religion", data.religion || "");
-      formData.append("healthInfo", data.healthInfo || "");
-      formData.append("bloodGroup", data.bloodGroup || "");
-      formData.append("sportHouse", data.sportHouse || "");
-      formData.append("studentType", data.studentType || "");
-      formData.append("address", data.address || "");
-      
+      formData.append('firstName', data.firstName);
+      formData.append('lastName', data.lastName);
+      formData.append('middleName', data.middleName || '');
+      formData.append('gender', data.gender);
+      formData.append('dateOfBirth', data.dateOfBirth);
+      formData.append('admissionDate', data.admissionDate);
+      formData.append('nationality', data.nationality);
+      formData.append('state', data.state);
+      formData.append('lga', data.lga);
+      formData.append('religion', data.religion);
+      formData.append('healthInfo', data.healthInfo);
+      formData.append('bloodGroup', data.bloodGroup);
+      formData.append('sportHouse', data.sportHouse);
+      formData.append('studentType', data.studentType);
+      formData.append('address', data.address);
+
       // Account credentials
-      formData.append("accountEmail", data.accountEmail);
-      formData.append("accountPhone", data.accountPhone);
-      
+      formData.append('accountEmail', data.accountEmail);
+      formData.append('accountPhone', data.accountPhone);
+
       if (passportPhoto) {
-        formData.append("passportPhoto", passportPhoto);
+        formData.append('passportPhoto', passportPhoto);
       }
 
       // Parent data with new guardian structure
@@ -160,45 +140,49 @@ export default function AddStudent() {
         maritalStatus: data.maritalStatus || null,
       };
 
-      formData.append("parentData", JSON.stringify(parentData));
-      formData.append("intakeType", "NEW"); // Default to NEW for new students
+      formData.append('parentData', JSON.stringify(parentData));
+      formData.append('intakeType', 'NEW'); // Default to NEW for new students
 
       // Create student
       const studentResponse = await adminApi.createStudent(formData);
-      
+
       console.log('Student creation response:', studentResponse);
-      
+
       if (!studentResponse.success) {
-        throw new Error(studentResponse.message || "Failed to create student");
+        throw new Error(studentResponse.message || 'Failed to create student');
       }
 
       // Enroll student if class is selected
       if (data.classId && currentTerm) {
         const enrollmentData = {
-          studentId: studentResponse.data?.admissionNumber || "",
+          studentId: studentResponse.data?.admissionNumber || '',
           classId: data.classId,
-          sectionId: data.sectionId || undefined,
           academicYear: currentTerm.session?.session || '',
-          term: currentTerm.term?.toUpperCase().replace(' ', '_') || 'FIRST_TERM',
+          term:
+            currentTerm.term?.toUpperCase().replace(' ', '_') || 'FIRST_TERM',
         };
 
         const enrollmentResponse = await adminApi.enrollStudent(enrollmentData);
 
         if (!enrollmentResponse.success) {
           // Rollback: Delete the created student since enrollment failed
-          await adminApi.deleteStudent(studentResponse.data?.admissionNumber || "");
-          throw new Error(enrollmentResponse.message || "Failed to enroll student");
+          await adminApi.deleteStudent(
+            studentResponse.data?.admissionNumber || '',
+          );
+          throw new Error(
+            enrollmentResponse.message || 'Failed to enroll student',
+          );
         }
       }
 
       return { student: studentResponse.data };
     },
     onSuccess: () => {
-      toast.success("Student created successfully");
-      navigate("/admin/students");
+      toast.success('Student created successfully');
+      navigate('/admin/students');
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to create student");
+      toast.error(error.message || 'Failed to create student');
     },
   });
 
@@ -208,31 +192,39 @@ export default function AddStudent() {
 
   const addSecondaryGuardian = () => {
     setShowSecondaryGuardian(true);
-    setValue("secondaryGuardian", {
-      relationship: "Mother",
-      firstName: "",
-      lastName: "",
-      phone: "",
-      email: "",
-      occupation: "",
+    setValue('secondaryGuardian', {
+      relationship: 'Mother',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      occupation: '',
     });
   };
 
   const removeSecondaryGuardian = () => {
     setShowSecondaryGuardian(false);
-    setValue("secondaryGuardian", undefined);
+    setValue('secondaryGuardian', undefined);
   };
 
   return (
     <AdminLayout>
       <div className="mx-auto max-w-[1500px] space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/admin/students")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/admin/students')}
+          >
             <ArrowLeft className="size-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Add New Student</h1>
-            <p className="text-sm text-muted-foreground">Register a new student and enroll them in a class</p>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Add New Student
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Register a new student and enroll them in a class
+            </p>
           </div>
         </div>
 
@@ -255,21 +247,27 @@ export default function AddStudent() {
                         <Input id="firstName" {...field} />
                       )}
                     />
-                    {errors.firstName && <p className="text-sm text-destructive">{errors.firstName.message}</p>}
+                    {errors.firstName && (
+                      <p className="text-sm text-destructive">
+                        {errors.firstName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">Last Name *</Label>
                     <Controller
                       name="lastName"
                       control={control}
-                      render={({ field }) => (
-                        <Input id="lastName" {...field} />
-                      )}
+                      render={({ field }) => <Input id="lastName" {...field} />}
                     />
-                    {errors.lastName && <p className="text-sm text-destructive">{errors.lastName.message}</p>}
+                    {errors.lastName && (
+                      <p className="text-sm text-destructive">
+                        {errors.lastName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="middleName">Middle Name</Label>
+                    <Label htmlFor="middleName">Middle Name *</Label>
                     <Controller
                       name="middleName"
                       control={control}
@@ -277,6 +275,11 @@ export default function AddStudent() {
                         <Input id="middleName" {...field} />
                       )}
                     />
+                    {errors.middleName && (
+                      <p className="text-sm text-destructive">
+                        {errors.middleName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gender *</Label>
@@ -284,18 +287,27 @@ export default function AddStudent() {
                       name="gender"
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value={Gender.MALE}>Male</SelectItem>
-                            <SelectItem value={Gender.FEMALE}>Female</SelectItem>
+                            <SelectItem value={Gender.FEMALE}>
+                              Female
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       )}
                     />
-                    {errors.gender && <p className="text-sm text-destructive">{errors.gender.message}</p>}
+                    {errors.gender && (
+                      <p className="text-sm text-destructive">
+                        {errors.gender.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="dateOfBirth">Date of Birth *</Label>
@@ -306,7 +318,11 @@ export default function AddStudent() {
                         <Input id="dateOfBirth" type="date" {...field} />
                       )}
                     />
-                    {errors.dateOfBirth && <p className="text-sm text-destructive">{errors.dateOfBirth.message}</p>}
+                    {errors.dateOfBirth && (
+                      <p className="text-sm text-destructive">
+                        {errors.dateOfBirth.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="admissionDate">Admission Date *</Label>
@@ -317,17 +333,23 @@ export default function AddStudent() {
                         <Input id="admissionDate" type="date" {...field} />
                       )}
                     />
-                    {errors.admissionDate && <p className="text-sm text-destructive">{errors.admissionDate.message}</p>}
+                    {errors.admissionDate && (
+                      <p className="text-sm text-destructive">
+                        {errors.admissionDate.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Additional Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Additional Information</h3>
+                <h3 className="text-lg font-semibold">
+                  Additional Information
+                </h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="nationality">Nationality</Label>
+                    <Label htmlFor="nationality">Nationality *</Label>
                     <Controller
                       name="nationality"
                       control={control}
@@ -335,54 +357,127 @@ export default function AddStudent() {
                         <Input id="nationality" {...field} />
                       )}
                     />
+                    {errors.nationality && (
+                      <p className="text-sm text-destructive">
+                        {errors.nationality.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
+                    <Label htmlFor="state">State *</Label>
                     <Controller
                       name="state"
                       control={control}
-                      render={({ field }) => (
-                        <Input id="state" {...field} />
-                      )}
+                      render={({ field }) => <Input id="state" {...field} />}
                     />
+                    {errors.state && (
+                      <p className="text-sm text-destructive">
+                        {errors.state.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lga">LGA</Label>
+                    <Label htmlFor="lga">LGA *</Label>
                     <Controller
                       name="lga"
                       control={control}
-                      render={({ field }) => (
-                        <Input id="lga" {...field} />
-                      )}
+                      render={({ field }) => <Input id="lga" {...field} />}
                     />
+                    {errors.lga && (
+                      <p className="text-sm text-destructive">
+                        {errors.lga.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="religion">Religion</Label>
+                    <Label htmlFor="religion">Religion *</Label>
                     <Controller
                       name="religion"
                       control={control}
                       render={({ field }) => (
-                        <Input id="religion" {...field} />
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select religion" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Christianity">
+                              Christianity
+                            </SelectItem>
+                            <SelectItem value="Islam">Islam</SelectItem>
+                            <SelectItem value="Traditional">
+                              Traditional
+                            </SelectItem>
+                            <SelectItem value="Others">Others</SelectItem>
+                          </SelectContent>
+                        </Select>
                       )}
                     />
+                    {errors.religion && (
+                      <p className="text-sm text-destructive">
+                        {errors.religion.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="bloodGroup">Blood Group</Label>
+                    <Label htmlFor="healthInfo">Health Info *</Label>
+                    <Controller
+                      name="healthInfo"
+                      control={control}
+                      render={({ field }) => (
+                        <Input id="healthInfo" {...field} />
+                      )}
+                    />
+                    {errors.healthInfo && (
+                      <p className="text-sm text-destructive">
+                        {errors.healthInfo.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bloodGroup">Blood Group *</Label>
                     <Controller
                       name="bloodGroup"
                       control={control}
                       render={({ field }) => (
-                        <Input id="bloodGroup" {...field} />
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select blood group" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="A+">A+</SelectItem>
+                            <SelectItem value="A-">A-</SelectItem>
+                            <SelectItem value="B+">B+</SelectItem>
+                            <SelectItem value="B-">B-</SelectItem>
+                            <SelectItem value="AB+">AB+</SelectItem>
+                            <SelectItem value="AB-">AB-</SelectItem>
+                            <SelectItem value="O+">O+</SelectItem>
+                            <SelectItem value="O-">O-</SelectItem>
+                          </SelectContent>
+                        </Select>
                       )}
                     />
+                    {errors.bloodGroup && (
+                      <p className="text-sm text-destructive">
+                        {errors.bloodGroup.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="studentType">Student Type</Label>
+                    <Label htmlFor="studentType">Student Type *</Label>
                     <Controller
                       name="studentType"
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select student type" />
                           </SelectTrigger>
@@ -393,6 +488,41 @@ export default function AddStudent() {
                         </Select>
                       )}
                     />
+                    {errors.studentType && (
+                      <p className="text-sm text-destructive">
+                        {errors.studentType.message}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sportHouse">Sport House *</Label>
+                    <Controller
+                      name="sportHouse"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select sport house" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Red">Red</SelectItem>
+                            <SelectItem value="Blue">Blue</SelectItem>
+                            <SelectItem value="Green">Green</SelectItem>
+                            <SelectItem value="Yellow">Yellow</SelectItem>
+                            <SelectItem value="Purple">Purple</SelectItem>
+                            <SelectItem value="Orange">Orange</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                    {errors.sportHouse && (
+                      <p className="text-sm text-destructive">
+                        {errors.sportHouse.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -403,7 +533,9 @@ export default function AddStudent() {
         <Card>
           <CardHeader>
             <CardTitle>Account Information</CardTitle>
-            <p className="text-sm text-muted-foreground">These credentials will be used for the parent portal login</p>
+            <p className="text-sm text-muted-foreground">
+              These credentials will be used for the parent portal login
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -417,7 +549,11 @@ export default function AddStudent() {
                       <Input id="accountEmail" type="email" {...field} />
                     )}
                   />
-                  {errors.accountEmail && <p className="text-sm text-destructive">{errors.accountEmail.message}</p>}
+                  {errors.accountEmail && (
+                    <p className="text-sm text-destructive">
+                      {errors.accountEmail.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="accountPhone">Account Phone *</Label>
@@ -428,7 +564,11 @@ export default function AddStudent() {
                       <Input id="accountPhone" {...field} />
                     )}
                   />
-                  {errors.accountPhone && <p className="text-sm text-destructive">{errors.accountPhone.message}</p>}
+                  {errors.accountPhone && (
+                    <p className="text-sm text-destructive">
+                      {errors.accountPhone.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -438,18 +578,26 @@ export default function AddStudent() {
         <Card>
           <CardHeader>
             <CardTitle>Primary Guardian (Account Holder)</CardTitle>
-            <p className="text-sm text-muted-foreground">This guardian will receive portal login credentials, invoices, and SMS alerts</p>
+            <p className="text-sm text-muted-foreground">
+              This guardian will receive portal login credentials, invoices, and
+              SMS alerts
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="primaryGuardian.relationship">Relationship *</Label>
+                  <Label htmlFor="primaryGuardian.relationship">
+                    Relationship *
+                  </Label>
                   <Controller
                     name="primaryGuardian.relationship"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select relationship" />
                         </SelectTrigger>
@@ -459,12 +607,18 @@ export default function AddStudent() {
                           <SelectItem value="Guardian">Guardian</SelectItem>
                           <SelectItem value="Uncle">Uncle</SelectItem>
                           <SelectItem value="Aunt">Aunt</SelectItem>
-                          <SelectItem value="Grandparent">Grandparent</SelectItem>
+                          <SelectItem value="Grandparent">
+                            Grandparent
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     )}
                   />
-                  {errors.primaryGuardian?.relationship && <p className="text-sm text-destructive">{errors.primaryGuardian.relationship.message}</p>}
+                  {errors.primaryGuardian?.relationship && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.relationship.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.title">Title</Label>
@@ -472,7 +626,10 @@ export default function AddStudent() {
                     name="primaryGuardian.title"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select title" />
                         </SelectTrigger>
@@ -491,7 +648,9 @@ export default function AddStudent() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="primaryGuardian.firstName">First Name *</Label>
+                  <Label htmlFor="primaryGuardian.firstName">
+                    First Name *
+                  </Label>
                   <Controller
                     name="primaryGuardian.firstName"
                     control={control}
@@ -499,7 +658,11 @@ export default function AddStudent() {
                       <Input id="primaryGuardian.firstName" {...field} />
                     )}
                   />
-                  {errors.primaryGuardian?.firstName && <p className="text-sm text-destructive">{errors.primaryGuardian.firstName.message}</p>}
+                  {errors.primaryGuardian?.firstName && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.firstName.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.lastName">Last Name *</Label>
@@ -510,7 +673,11 @@ export default function AddStudent() {
                       <Input id="primaryGuardian.lastName" {...field} />
                     )}
                   />
-                  {errors.primaryGuardian?.lastName && <p className="text-sm text-destructive">{errors.primaryGuardian.lastName.message}</p>}
+                  {errors.primaryGuardian?.lastName && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.lastName.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.phone">Phone Number</Label>
@@ -521,7 +688,11 @@ export default function AddStudent() {
                       <Input id="primaryGuardian.phone" {...field} />
                     )}
                   />
-                  {errors.primaryGuardian?.phone && <p className="text-sm text-destructive">{errors.primaryGuardian.phone.message}</p>}
+                  {errors.primaryGuardian?.phone && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.phone.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.email">Email Address</Label>
@@ -529,10 +700,18 @@ export default function AddStudent() {
                     name="primaryGuardian.email"
                     control={control}
                     render={({ field }) => (
-                      <Input id="primaryGuardian.email" type="email" {...field} />
+                      <Input
+                        id="primaryGuardian.email"
+                        type="email"
+                        {...field}
+                      />
                     )}
                   />
-                  {errors.primaryGuardian?.email && <p className="text-sm text-destructive">{errors.primaryGuardian.email.message}</p>}
+                  {errors.primaryGuardian?.email && (
+                    <p className="text-sm text-destructive">
+                      {errors.primaryGuardian.email.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="primaryGuardian.occupation">Occupation</Label>
@@ -565,7 +744,11 @@ export default function AddStudent() {
           </CardHeader>
           <CardContent>
             {!showSecondaryGuardian ? (
-              <Button type="button" variant="outline" onClick={addSecondaryGuardian}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addSecondaryGuardian}
+              >
                 <Plus className="mr-2 size-4" />
                 Add Secondary Guardian
               </Button>
@@ -573,12 +756,17 @@ export default function AddStudent() {
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.relationship">Relationship *</Label>
+                    <Label htmlFor="secondaryGuardian.relationship">
+                      Relationship *
+                    </Label>
                     <Controller
                       name="secondaryGuardian.relationship"
                       control={control}
                       render={({ field }) => (
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select relationship" />
                           </SelectTrigger>
@@ -588,15 +776,23 @@ export default function AddStudent() {
                             <SelectItem value="Guardian">Guardian</SelectItem>
                             <SelectItem value="Uncle">Uncle</SelectItem>
                             <SelectItem value="Aunt">Aunt</SelectItem>
-                            <SelectItem value="Grandparent">Grandparent</SelectItem>
+                            <SelectItem value="Grandparent">
+                              Grandparent
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       )}
                     />
-                    {errors.secondaryGuardian?.relationship && <p className="text-sm text-destructive">{errors.secondaryGuardian.relationship.message}</p>}
+                    {errors.secondaryGuardian?.relationship && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.relationship.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.firstName">First Name *</Label>
+                    <Label htmlFor="secondaryGuardian.firstName">
+                      First Name *
+                    </Label>
                     <Controller
                       name="secondaryGuardian.firstName"
                       control={control}
@@ -604,10 +800,16 @@ export default function AddStudent() {
                         <Input id="secondaryGuardian.firstName" {...field} />
                       )}
                     />
-                    {errors.secondaryGuardian?.firstName && <p className="text-sm text-destructive">{errors.secondaryGuardian.firstName.message}</p>}
+                    {errors.secondaryGuardian?.firstName && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.firstName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.lastName">Last Name *</Label>
+                    <Label htmlFor="secondaryGuardian.lastName">
+                      Last Name *
+                    </Label>
                     <Controller
                       name="secondaryGuardian.lastName"
                       control={control}
@@ -615,10 +817,16 @@ export default function AddStudent() {
                         <Input id="secondaryGuardian.lastName" {...field} />
                       )}
                     />
-                    {errors.secondaryGuardian?.lastName && <p className="text-sm text-destructive">{errors.secondaryGuardian.lastName.message}</p>}
+                    {errors.secondaryGuardian?.lastName && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.lastName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.phone">Phone Number</Label>
+                    <Label htmlFor="secondaryGuardian.phone">
+                      Phone Number
+                    </Label>
                     <Controller
                       name="secondaryGuardian.phone"
                       control={control}
@@ -626,21 +834,37 @@ export default function AddStudent() {
                         <Input id="secondaryGuardian.phone" {...field} />
                       )}
                     />
-                    {errors.secondaryGuardian?.phone && <p className="text-sm text-destructive">{errors.secondaryGuardian.phone.message}</p>}
+                    {errors.secondaryGuardian?.phone && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.phone.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.email">Email Address</Label>
+                    <Label htmlFor="secondaryGuardian.email">
+                      Email Address
+                    </Label>
                     <Controller
                       name="secondaryGuardian.email"
                       control={control}
                       render={({ field }) => (
-                        <Input id="secondaryGuardian.email" type="email" {...field} />
+                        <Input
+                          id="secondaryGuardian.email"
+                          type="email"
+                          {...field}
+                        />
                       )}
                     />
-                    {errors.secondaryGuardian?.email && <p className="text-sm text-destructive">{errors.secondaryGuardian.email.message}</p>}
+                    {errors.secondaryGuardian?.email && (
+                      <p className="text-sm text-destructive">
+                        {errors.secondaryGuardian.email.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="secondaryGuardian.occupation">Occupation</Label>
+                    <Label htmlFor="secondaryGuardian.occupation">
+                      Occupation
+                    </Label>
                     <Controller
                       name="secondaryGuardian.occupation"
                       control={control}
@@ -650,7 +874,11 @@ export default function AddStudent() {
                     />
                   </div>
                 </div>
-                <Button type="button" variant="destructive" onClick={removeSecondaryGuardian}>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={removeSecondaryGuardian}
+                >
                   <Trash2 className="mr-2 size-4" />
                   Remove Secondary Guardian
                 </Button>
@@ -667,14 +895,17 @@ export default function AddStudent() {
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="address">Residential Address</Label>
+                  <Label htmlFor="address">Residential Address *</Label>
                   <Controller
                     name="address"
                     control={control}
-                    render={({ field }) => (
-                      <Input id="address" {...field} />
-                    )}
+                    render={({ field }) => <Input id="address" {...field} />}
                   />
+                  {errors.address && (
+                    <p className="text-sm text-destructive">
+                      {errors.address.message}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="maritalStatus">Marital Status</Label>
@@ -682,7 +913,10 @@ export default function AddStudent() {
                     name="maritalStatus"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select marital status" />
                         </SelectTrigger>
@@ -705,21 +939,23 @@ export default function AddStudent() {
         <Card>
           <CardHeader>
             <CardTitle>Class Enrollment</CardTitle>
-            <p className="text-sm text-muted-foreground">Optional: Enroll the student in a class</p>
+            <p className="text-sm text-muted-foreground">
+              Optional: Enroll the student in a class
+            </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="classId">Class</Label>
                   <Controller
                     name="classId"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={(value) => {
-                        field.onChange(value);
-                        setSelectedClass(value);
-                      }} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select class" />
                         </SelectTrigger>
@@ -727,27 +963,6 @@ export default function AddStudent() {
                           {classes?.data?.map((cls: any) => (
                             <SelectItem key={cls.id} value={cls.id}>
                               {cls.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="sectionId">Section</Label>
-                  <Controller
-                    name="sectionId"
-                    control={control}
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value} disabled={!selectedClass}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select section" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {sections.map((section: any) => (
-                            <SelectItem key={section.id} value={section.id}>
-                              {section.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -772,7 +987,9 @@ export default function AddStudent() {
                   id="passportPhoto"
                   type="file"
                   accept="image/*"
-                  onChange={(e) => setPassportPhoto(e.target.files?.[0] || null)}
+                  onChange={(e) =>
+                    setPassportPhoto(e.target.files?.[0] || null)
+                  }
                 />
               </div>
             </div>
@@ -780,17 +997,25 @@ export default function AddStudent() {
         </Card>
 
         <div className="flex gap-4 justify-end">
-          <Button type="button" variant="outline" onClick={() => navigate("/admin/students")}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/admin/students')}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting} onClick={handleSubmit(onSubmit)}>
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            onClick={handleSubmit(onSubmit)}
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
                 Creating...
               </>
             ) : (
-              "Create Student"
+              'Create Student'
             )}
           </Button>
         </div>
