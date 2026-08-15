@@ -29,7 +29,6 @@ import ClassDetails from './pages/admin/classes/Details';
 import BulkTransfer from './pages/admin/classes/BulkTransfer';
 import ClassSubjects from './pages/admin/classes/Subjects';
 import SubjectsList from './pages/admin/subjects/List';
-import AddSubject from './pages/admin/subjects/Add';
 import EditSubject from './pages/admin/subjects/Edit';
 import SubjectDetails from './pages/admin/subjects/Details';
 import AssignmentsList from './pages/admin/assignments/List';
@@ -134,7 +133,6 @@ export default function App() {
                   element={<BulkTransfer />}
                 />
                 <Route path="/admin/subjects" element={<SubjectsList />} />
-                <Route path="/admin/subjects/add" element={<AddSubject />} />
                 <Route
                   path="/admin/subjects/:subjectId"
                   element={<SubjectDetails />}
