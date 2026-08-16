@@ -1,17 +1,27 @@
-import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, CheckCircle, Clock, AlertCircle, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { adminApi } from "@/lib/api/admin";
-import VerificationList from "@/components/results/VerificationList";
+import { AdminLayout } from '@/components/layout/AdminLayout';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { adminApi } from '@/lib/api/admin';
+import VerificationList from '@/components/results/VerificationList';
+import { useAlert } from '@/contexts/alert-context';
 
 export default function ResultsVerification() {
   const navigate = useNavigate();
+  const { showAlert, showSuccess } = useAlert();
   const [loading, setLoading] = useState(true);
   const [results, setResults] = useState([]);
-  const [selectedResults, setSelectedResults] = useState<Set<string>>(new Set());
+  const [selectedResults, setSelectedResults] = useState<Set<string>>(
+    new Set(),
+  );
   const [verifying, setVerifying] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -30,15 +40,18 @@ export default function ResultsVerification() {
         page,
         limit,
       });
-      
+
       if (response.success) {
         const responseData = response.data as any;
         setResults(responseData.results || responseData);
         setTotal(responseData.total || responseData.length);
       }
     } catch (error: any) {
-      console.error("Error loading unverified results:", error);
-      if (error.message?.includes('Access denied') || error.message?.includes('HEAD_TEACHER')) {
+      console.error('Error loading unverified results:', error);
+      if (
+        error.message?.includes('Access denied') ||
+        error.message?.includes('HEAD_TEACHER')
+      ) {
         setPermissionDenied(true);
       }
     } finally {
@@ -66,7 +79,7 @@ export default function ResultsVerification() {
 
   const handleVerifySelected = async () => {
     if (selectedResults.size === 0) {
-      alert("Please select at least one result to verify");
+      showAlert('Please select at least one result to verify', 'error');
       return;
     }
 
@@ -79,13 +92,13 @@ export default function ResultsVerification() {
           verifiedCount++;
         }
       }
-      
-      alert(`Successfully verified ${verifiedCount} results`);
+
+      showSuccess(`Successfully verified ${verifiedCount} results`);
       setSelectedResults(new Set());
       loadUnverifiedResults();
     } catch (error) {
-      console.error("Error verifying results:", error);
-      alert("Error verifying results. Please try again.");
+      console.error('Error verifying results:', error);
+      showAlert('Error verifying results. Please try again.', 'error');
     } finally {
       setVerifying(false);
     }
@@ -98,8 +111,8 @@ export default function ResultsVerification() {
         loadUnverifiedResults();
       }
     } catch (error) {
-      console.error("Error verifying result:", error);
-      alert("Error verifying result. Please try again.");
+      console.error('Error verifying result:', error);
+      showAlert('Error verifying result. Please try again.', 'error');
     }
   };
 
@@ -112,27 +125,35 @@ export default function ResultsVerification() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/admin/results")}
+              onClick={() => navigate('/admin/results')}
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Results Verification</h1>
-              <p className="text-sm text-gray-600">Review and verify student results before final publication</p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Results Verification
+              </h1>
+              <p className="text-sm text-gray-600">
+                Review and verify student results before final publication
+              </p>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={handleSelectAll}
               disabled={results.length === 0 || permissionDenied}
             >
-              {selectedResults.size === results.length ? "Deselect All" : "Select All"}
+              {selectedResults.size === results.length
+                ? 'Deselect All'
+                : 'Select All'}
             </Button>
             <Button
               onClick={handleVerifySelected}
-              disabled={selectedResults.size === 0 || verifying || permissionDenied}
+              disabled={
+                selectedResults.size === 0 || verifying || permissionDenied
+              }
             >
               {verifying ? (
                 <>
@@ -154,34 +175,45 @@ export default function ResultsVerification() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending Verification</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Pending Verification
+                </CardTitle>
                 <Clock className="h-4 w-4 text-orange-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">{total}</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {total}
+                </div>
                 <p className="text-xs text-gray-600">Results awaiting review</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Selected</CardTitle>
                 <CheckCircle className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{selectedResults.size}</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {selectedResults.size}
+                </div>
                 <p className="text-xs text-gray-600">Results to verify</p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Verification Rate</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Verification Rate
+                </CardTitle>
                 <AlertCircle className="h-4 w-4 text-green-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">
-                  {total > 0 ? Math.round(((total - results.length) / total) * 100) : 0}%
+                  {total > 0
+                    ? Math.round(((total - results.length) / total) * 100)
+                    : 0}
+                  %
                 </div>
                 <p className="text-xs text-gray-600">Overall completion</p>
               </CardContent>
@@ -202,17 +234,25 @@ export default function ResultsVerification() {
             ) : permissionDenied ? (
               <div className="text-center py-12">
                 <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Access Denied</h3>
-                <p className="text-gray-600 mb-4">Result verification is restricted to Head Teachers only.</p>
-                <Button onClick={() => navigate("/admin/results")}>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Access Denied
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Result verification is restricted to Head Teachers only.
+                </p>
+                <Button onClick={() => navigate('/admin/results')}>
                   Back to Dashboard
                 </Button>
               </div>
             ) : results.length === 0 ? (
               <div className="text-center py-12">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">All Results Verified</h3>
-                <p className="text-gray-600">There are no pending results to verify.</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  All Results Verified
+                </h3>
+                <p className="text-gray-600">
+                  There are no pending results to verify.
+                </p>
               </div>
             ) : (
               <VerificationList
@@ -229,13 +269,14 @@ export default function ResultsVerification() {
         {total > limit && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-600">
-              Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} results
+              Showing {(page - 1) * limit + 1} to{' '}
+              {Math.min(page * limit, total)} of {total} results
             </p>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
               >
                 Previous
@@ -243,7 +284,7 @@ export default function ResultsVerification() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => setPage((p) => p + 1)}
                 disabled={page * limit >= total}
               >
                 Next
