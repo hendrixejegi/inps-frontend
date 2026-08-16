@@ -586,7 +586,25 @@ export default function ResultsEntry() {
         showSuccess(
           `Results submitted successfully for ${successCount} subject(s)!`,
         );
-        navigate('/admin/results');
+        // Reset score data for new entry while keeping context selections
+        setStudents((prevStudents) =>
+          prevStudents.map((student) => ({
+            ...student,
+            subjects: Object.keys(student.subjects).reduce((acc, subjectId) => {
+              acc[subjectId] = {
+                ca1Score: null,
+                ca2Score: null,
+                examScore: null,
+                total: 0,
+                grade: 'F',
+                isComplete: false,
+              };
+              return acc;
+            }, {} as any),
+          })),
+        );
+        setCompletedEntries(0);
+        setValidationErrors([]);
       } else {
         showAlert('Error submitting results. Please try again.', 'error');
       }

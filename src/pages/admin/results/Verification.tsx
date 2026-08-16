@@ -1,15 +1,17 @@
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   ArrowLeft,
   CheckCircle,
   Clock,
   AlertCircle,
   Loader2,
+  Search,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { adminApi } from '@/lib/api/admin';
 import VerificationList from '@/components/results/VerificationList';
 import { useAlert } from '@/contexts/alert-context';
@@ -27,6 +29,56 @@ export default function ResultsVerification() {
   const [total, setTotal] = useState(0);
   const [limit] = useState(20);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Group results by subject
+  const groupedResults = useMemo(() => {
+    const groups = new Map<string, any[]>();
+    (results as any[]).forEach((result) => {
+      const subjectName = result.subject?.subjectName || 'Unknown Subject';
+      if (!groups.has(subjectName)) {
+        groups.set(subjectName, []);
+      }
+      groups.get(subjectName)!.push(result);
+    });
+    return groups;
+  }, [results]);
+
+  // Filter results by search query
+  const filteredGroupedResults = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return groupedResults;
+    }
+
+    const filtered = new Map<string, any[]>();
+    const query = searchQuery.toLowerCase();
+
+    groupedResults.forEach((subjectResults, subjectName) => {
+      const filteredSubjectResults = subjectResults.filter((result) => {
+        const studentName =
+          `${result.student?.firstName} ${result.student?.lastName}`.toLowerCase();
+        const admissionNumber =
+          result.student?.admissionNumber?.toLowerCase() || '';
+        const currentSubjectName =
+          result.subject?.subjectName?.toLowerCase() || '';
+        const subjectCode = result.subject?.subjectCode?.toLowerCase() || '';
+
+        return (
+          studentName.includes(query) ||
+          admissionNumber.includes(query) ||
+          currentSubjectName.includes(query) ||
+          subjectCode.includes(query) ||
+          subjectName.toLowerCase().includes(query)
+        );
+      });
+
+      if (filteredSubjectResults.length > 0) {
+        filtered.set(subjectName, filteredSubjectResults);
+      }
+    });
+
+    return filtered;
+  }, [groupedResults, searchQuery]);
 
   useEffect(() => {
     loadUnverifiedResults();
@@ -70,11 +122,36 @@ export default function ResultsVerification() {
   };
 
   const handleSelectAll = () => {
-    if (selectedResults.size === results.length) {
+    const allResultIds = Array.from(filteredGroupedResults.values())
+      .flat()
+      .map((r: any) => r.id);
+
+    if (selectedResults.size === allResultIds.length) {
       setSelectedResults(new Set());
     } else {
-      setSelectedResults(new Set(results.map((r: any) => r.id)));
+      setSelectedResults(new Set(allResultIds));
     }
+  };
+
+  const handleSelectAllInSubject = (subjectName: string) => {
+    const subjectResults = filteredGroupedResults.get(subjectName) || [];
+    const subjectResultIds = subjectResults.map((r: any) => r.id);
+
+    const allSubjectSelected = subjectResultIds.every((id) =>
+      selectedResults.has(id),
+    );
+
+    const newSelected = new Set(selectedResults);
+
+    if (allSubjectSelected) {
+      // Deselect all in this subject
+      subjectResultIds.forEach((id) => newSelected.delete(id));
+    } else {
+      // Select all in this subject
+      subjectResultIds.forEach((id) => newSelected.add(id));
+    }
+
+    setSelectedResults(newSelected);
   };
 
   const handleVerifySelected = async () => {
@@ -140,14 +217,29 @@ export default function ResultsVerification() {
           </div>
 
           <div className="flex gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search by student, subject name, or code..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-64"
+              />
+            </div>
             <Button
               variant="outline"
               onClick={handleSelectAll}
               disabled={results.length === 0 || permissionDenied}
             >
-              {selectedResults.size === results.length
-                ? 'Deselect All'
-                : 'Select All'}
+              {(() => {
+                const allResultIds = Array.from(filteredGroupedResults.values())
+                  .flat()
+                  .map((r: any) => r.id);
+                return selectedResults.size === allResultIds.length
+                  ? 'Deselect All'
+                  : 'Select All';
+              })()}
             </Button>
             <Button
               onClick={handleVerifySelected}
@@ -244,23 +336,63 @@ export default function ResultsVerification() {
                   Back to Dashboard
                 </Button>
               </div>
-            ) : results.length === 0 ? (
+            ) : filteredGroupedResults.size === 0 ? (
               <div className="text-center py-12">
                 <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  All Results Verified
+                  {searchQuery ? 'No Results Found' : 'All Results Verified'}
                 </h3>
                 <p className="text-gray-600">
-                  There are no pending results to verify.
+                  {searchQuery
+                    ? 'Try adjusting your search criteria'
+                    : 'There are no pending results to verify.'}
                 </p>
               </div>
             ) : (
-              <VerificationList
-                results={results}
-                selectedResults={selectedResults}
-                onSelectResult={handleSelectResult}
-                onVerifyResult={handleVerifyResult}
-              />
+              <div className="space-y-6">
+                {Array.from(filteredGroupedResults.entries()).map(
+                  ([subjectName, subjectResults]) => (
+                    <div key={subjectName} className="space-y-4">
+                      {/* Subject Header */}
+                      <div className="flex items-center justify-between border-b pb-3">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {subjectName}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {subjectResults.length} pending result(s)
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleSelectAllInSubject(subjectName)}
+                        >
+                          {(() => {
+                            const subjectResultIds = subjectResults.map(
+                              (r: any) => r.id,
+                            );
+                            const allSubjectSelected = subjectResultIds.every(
+                              (id) => selectedResults.has(id),
+                            );
+                            return allSubjectSelected
+                              ? 'Deselect Subject'
+                              : 'Select Subject';
+                          })()}
+                        </Button>
+                      </div>
+
+                      {/* Subject Results */}
+                      <VerificationList
+                        results={subjectResults}
+                        selectedResults={selectedResults}
+                        onSelectResult={handleSelectResult}
+                        onVerifyResult={handleVerifyResult}
+                      />
+                    </div>
+                  ),
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
