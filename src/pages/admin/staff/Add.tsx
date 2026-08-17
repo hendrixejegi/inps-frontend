@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { StaffRole, Gender, MaritalStatus, Term } from '@/lib/types/common';
 import { Qualification, PreviousEmployment } from '@/lib/types/staff';
+import { NIGERIAN_STATES, getLGAsByState } from '@/lib/data/nigeria-states';
 import { SessionTermSelector } from '@/components/admin/SessionTermSelector';
 
 const staffSchema = z
@@ -136,6 +137,7 @@ export default function AddStaff() {
   const [selectedSessionName, setSelectedSessionName] = useState('');
   const [selectedTermId, setSelectedTermId] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('');
+  const [selectedState, setSelectedState] = useState('');
 
   const { data: subjects } = useQuery({
     queryKey: ['subjects'],
@@ -460,11 +462,62 @@ export default function AddStaff() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">State</Label>
-                    <Input id="state" {...register('state')} />
+                    <Controller
+                      name="state"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            setSelectedState(value);
+                          }}
+                          value={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select state" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {NIGERIAN_STATES.map((state) => (
+                              <SelectItem key={state.name} value={state.name}>
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lga">LGA</Label>
-                    <Input id="lga" {...register('lga')} />
+                    <Controller
+                      name="lga"
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!selectedState}
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                selectedState
+                                  ? 'Select LGA'
+                                  : 'Select state first'
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedState &&
+                              getLGAsByState(selectedState).map((lga) => (
+                                <SelectItem key={lga} value={lga}>
+                                  {lga}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="religion">Religion</Label>
