@@ -49,6 +49,7 @@ import ResultsEntry from './pages/admin/results/Entry';
 import ResultsVerification from './pages/admin/results/Verification';
 import ReportCards from './pages/admin/results/ReportCards';
 import Analytics from './pages/admin/results/Analytics';
+import AdminSettings from './pages/admin/Settings';
 import ParentDashboard from './pages/parent/Dashboard';
 import ParentChildren from './pages/parent/Children';
 import ChildProfile from './pages/parent/ChildProfile';
@@ -193,6 +194,7 @@ function AppContent() {
                 element={<ReportCards />}
               />
               <Route path="/admin/results/analytics" element={<Analytics />} />
+              <Route path="/admin/settings" element={<AdminSettings />} />
 
               {/* Parent Routes */}
               <Route path="/parent/dashboard" element={<ParentDashboard />} />
