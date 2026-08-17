@@ -33,12 +33,12 @@ import { NIGERIAN_STATES, getLGAsByState } from '@/lib/data/nigeria-states';
 const staffSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  middleName: z.string().optional(),
+  middleName: z.string().min(1, 'Middle name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(1, 'Phone number is required'),
   role: z.nativeEnum(StaffRole),
   gender: z.nativeEnum(Gender).optional(),
-  dateOfBirth: z.string().optional(),
+  dateOfBirth: z.string().min(1, 'Date of birth is required'),
   address: z.string().optional(),
   maritalStatus: z.nativeEnum(MaritalStatus).optional(),
   nationality: z.string().optional(),
@@ -65,7 +65,7 @@ const staffSchema = z.object({
       }),
     )
     .optional(),
-  dateOfEmployment: z.string().optional(),
+  dateOfEmployment: z.string().min(1, 'Date of employment is required'),
   nextOfKinName: z.string().optional(),
   nextOfKinPhone: z.string().optional(),
   nextOfKinRelationship: z.string().optional(),
@@ -419,8 +419,13 @@ export default function EditStaff() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="middleName">Middle Name</Label>
+                    <Label htmlFor="middleName">Middle Name *</Label>
                     <Input id="middleName" {...register('middleName')} />
+                    {errors.middleName && (
+                      <p className="text-sm text-destructive">
+                        {errors.middleName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email Address *</Label>
@@ -441,12 +446,17 @@ export default function EditStaff() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                    <Label htmlFor="dateOfBirth">Date of Birth *</Label>
                     <Input
                       id="dateOfBirth"
                       type="date"
                       {...register('dateOfBirth')}
                     />
+                    {errors.dateOfBirth && (
+                      <p className="text-sm text-destructive">
+                        {errors.dateOfBirth.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gender</Label>
@@ -637,12 +647,19 @@ export default function EditStaff() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfEmployment">Date of Employment</Label>
+                    <Label htmlFor="dateOfEmployment">
+                      Date of Employment *
+                    </Label>
                     <Input
                       id="dateOfEmployment"
                       type="date"
                       {...register('dateOfEmployment')}
                     />
+                    {errors.dateOfEmployment && (
+                      <p className="text-sm text-destructive">
+                        {errors.dateOfEmployment.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="subjectId">Subject Specialization</Label>
