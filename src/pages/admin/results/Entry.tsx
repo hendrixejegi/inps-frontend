@@ -72,6 +72,14 @@ export default function ResultsEntry() {
     }
   }, [searchParams]);
 
+  // Auto-load students when classId, academicYear, and termId are all set
+  useEffect(() => {
+    if (classId && academicYear && termId && !loading && !studentsLoaded) {
+      loadStudents();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classId, academicYear, termId]);
+
   const loadInitialData = async () => {
     try {
       setLoading(true);
