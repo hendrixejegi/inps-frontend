@@ -10,6 +10,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useGlobalErrorHandler } from '@/hooks/useGlobalErrorHandler';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -88,6 +89,7 @@ function AppContent() {
           <AlertProvider>
             <Toaster />
             <Sonner />
+            <PWAInstallPrompt />
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/auth/login" element={<Login />} />
