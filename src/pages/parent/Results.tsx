@@ -1,53 +1,75 @@
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
-import { ParentLayout } from "@/components/layout/ParentLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { parentApi } from "@/lib/api/parent";
-import { Child, ChildResults } from "@/lib/types/parent";
-import { ResultsTable } from "@/components/parent/ResultsTable";
-import { ResultsSummaryStats } from "@/components/parent/ResultsSummary";
-import { WalletCards, Loader2, AlertCircle } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { ParentLayout } from '@/components/layout/ParentLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { parentApi } from '@/lib/api/parent';
+import { Child, ChildResults } from '@/lib/types/parent';
+import { ResultsTable } from '@/components/parent/ResultsTable';
+import { ResultsSummaryStats } from '@/components/parent/ResultsSummary';
+import { WalletCards, Loader2, AlertCircle, Download } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { generateParentResultsPDF } from '@/lib/utils/pdfGenerator';
+import { useAlert } from '@/contexts/alert-context';
 
 export default function ParentResults() {
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  const [selectedChildId, setSelectedChildId] = useState(searchParams.get("studentId") || "");
-  const [selectedSessionId, setSelectedSessionId] = useState("");
-  const [selectedTermId, setSelectedTermId] = useState("");
-  const [viewMode, setViewMode] = useState<"detail" | "summary">("detail");
+  const { showAlert } = useAlert();
+
+  const [selectedChildId, setSelectedChildId] = useState(
+    searchParams.get('studentId') || '',
+  );
+  const [selectedSessionId, setSelectedSessionId] = useState('');
+  const [selectedTermId, setSelectedTermId] = useState('');
+  const [viewMode, setViewMode] = useState<'detail' | 'summary'>('detail');
 
   const { data: childrenData, isLoading: childrenLoading } = useQuery({
-    queryKey: ["parent-children"],
+    queryKey: ['parent-children'],
     queryFn: () => parentApi.getMyChildren(),
   });
 
   const { data: sessionsData, isLoading: sessionsLoading } = useQuery({
-    queryKey: ["parent-sessions"],
+    queryKey: ['parent-sessions'],
     queryFn: () => parentApi.getSessions(),
   });
 
   const { data: currentTermData } = useQuery({
-    queryKey: ["parent-current-term"],
+    queryKey: ['parent-current-term'],
     queryFn: () => parentApi.getCurrentTerm(),
   });
 
   const { data: currentSessionData } = useQuery({
-    queryKey: ["parent-current-session"],
+    queryKey: ['parent-current-session'],
     queryFn: () => parentApi.getCurrentSession(),
   });
 
-  const { data: resultsData, isLoading: resultsLoading, error: resultsError } = useQuery({
-    queryKey: ["parent-child-results", selectedChildId, selectedSessionId, selectedTermId, viewMode],
-    queryFn: () => parentApi.getChildResults(selectedChildId, {
-      termId: selectedTermId,
-      sessionId: selectedSessionId,
-      filter: viewMode,
-    }),
+  const {
+    data: resultsData,
+    isLoading: resultsLoading,
+    error: resultsError,
+  } = useQuery({
+    queryKey: [
+      'parent-child-results',
+      selectedChildId,
+      selectedSessionId,
+      selectedTermId,
+      viewMode,
+    ],
+    queryFn: () =>
+      parentApi.getChildResults(selectedChildId, {
+        termId: selectedTermId,
+        sessionId: selectedSessionId,
+        filter: viewMode,
+      }),
     enabled: !!selectedChildId && !!selectedSessionId && !!selectedTermId,
   });
 
@@ -69,7 +91,7 @@ export default function ParentResults() {
 
   // Update selected child when URL param changes
   useEffect(() => {
-    const urlChildId = searchParams.get("studentId");
+    const urlChildId = searchParams.get('studentId');
     if (urlChildId && urlChildId !== selectedChildId) {
       setSelectedChildId(urlChildId);
     }
@@ -87,12 +109,36 @@ export default function ParentResults() {
     // The query will automatically refetch when these values change
   };
 
+  const handleDownloadPDF = async () => {
+    if (!selectedChildId || !results) {
+      showAlert('Please select a child and view results first', 'error');
+      return;
+    }
+
+    try {
+      const child = children.find((c: Child) => c.id === selectedChildId);
+      if (!child) {
+        showAlert('Child not found', 'error');
+        return;
+      }
+
+      await generateParentResultsPDF(child, results, {
+        filename: `ReportCard_${child.admissionNumber}.pdf`,
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      showAlert('Failed to generate PDF. Please try again.', 'error');
+    }
+  };
+
   return (
     <ParentLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Results</h1>
-          <p className="text-muted-foreground mt-1">View your children's academic performance</p>
+          <p className="text-muted-foreground mt-1">
+            View your children's academic performance
+          </p>
         </div>
 
         {/* Selection Card */}
@@ -104,14 +150,19 @@ export default function ParentResults() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Child</label>
-                <Select value={selectedChildId} onValueChange={handleChildChange} disabled={childrenLoading}>
+                <Select
+                  value={selectedChildId}
+                  onValueChange={handleChildChange}
+                  disabled={childrenLoading}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select child" />
                   </SelectTrigger>
                   <SelectContent>
                     {children.map((child: Child) => (
                       <SelectItem key={child.id} value={child.id}>
-                        {child.firstName} {child.lastName} ({child.admissionNumber})
+                        {child.firstName} {child.lastName} (
+                        {child.admissionNumber})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -120,7 +171,11 @@ export default function ParentResults() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Session</label>
-                <Select value={selectedSessionId} onValueChange={setSelectedSessionId} disabled={sessionsLoading}>
+                <Select
+                  value={selectedSessionId}
+                  onValueChange={setSelectedSessionId}
+                  disabled={sessionsLoading}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select session" />
                   </SelectTrigger>
@@ -136,7 +191,10 @@ export default function ParentResults() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Term</label>
-                <Select value={selectedTermId} onValueChange={setSelectedTermId}>
+                <Select
+                  value={selectedTermId}
+                  onValueChange={setSelectedTermId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select term" />
                   </SelectTrigger>
@@ -150,7 +208,12 @@ export default function ParentResults() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">View Mode</label>
-                <Select value={viewMode} onValueChange={(value: "detail" | "summary") => setViewMode(value)}>
+                <Select
+                  value={viewMode}
+                  onValueChange={(value: 'detail' | 'summary') =>
+                    setViewMode(value)
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -162,23 +225,39 @@ export default function ParentResults() {
               </div>
             </div>
 
-            <Button 
-              onClick={handleViewResults}
-              disabled={!selectedChildId || !selectedSessionId || !selectedTermId || resultsLoading}
-              className="mt-4"
-            >
-              {resultsLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <WalletCards className="mr-2 h-4 w-4" />
-                  View Results
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2 mt-4">
+              <Button
+                onClick={handleViewResults}
+                disabled={
+                  !selectedChildId ||
+                  !selectedSessionId ||
+                  !selectedTermId ||
+                  resultsLoading
+                }
+                className="flex-1"
+              >
+                {resultsLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <>
+                    <WalletCards className="mr-2 h-4 w-4" />
+                    View Results
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={handleDownloadPDF}
+                disabled={!results || resultsLoading}
+                variant="outline"
+                className="flex-1"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -187,7 +266,8 @@ export default function ParentResults() {
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Failed to load results. Please ensure the child has verified results for the selected session and term.
+              Failed to load results. Please ensure the child has verified
+              results for the selected session and term.
             </AlertDescription>
           </Alert>
         )}
@@ -202,22 +282,28 @@ export default function ParentResults() {
         {results && !resultsLoading && (
           <div className="space-y-6">
             {/* Summary View */}
-            {viewMode === "summary" && results.summary && (
+            {viewMode === 'summary' && results.summary && (
               <>
                 <ResultsSummaryStats summary={results.summary} />
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Remarks</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="font-semibold mb-1">Class Teacher Remark:</p>
-                      <p className="text-muted-foreground">{results.classTeacherRemark || "No remark provided"}</p>
+                      <p className="font-semibold mb-1">
+                        Class Teacher Remark:
+                      </p>
+                      <p className="text-muted-foreground">
+                        {results.classTeacherRemark || 'No remark provided'}
+                      </p>
                     </div>
                     <div>
                       <p className="font-semibold mb-1">Head Teacher Remark:</p>
-                      <p className="text-muted-foreground">{results.headTeacherRemark || "No remark provided"}</p>
+                      <p className="text-muted-foreground">
+                        {results.headTeacherRemark || 'No remark provided'}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -225,18 +311,21 @@ export default function ParentResults() {
             )}
 
             {/* Detailed View */}
-            {viewMode === "detail" && results.results && results.results.length > 0 && (
-              <ResultsTable results={results.results} />
-            )}
+            {viewMode === 'detail' &&
+              results.results &&
+              results.results.length > 0 && (
+                <ResultsTable results={results.results} />
+              )}
 
-            {viewMode === "detail" && (!results.results || results.results.length === 0) && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  No verified results found for the selected session and term.
-                </AlertDescription>
-              </Alert>
-            )}
+            {viewMode === 'detail' &&
+              (!results.results || results.results.length === 0) && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    No verified results found for the selected session and term.
+                  </AlertDescription>
+                </Alert>
+              )}
           </div>
         )}
       </div>

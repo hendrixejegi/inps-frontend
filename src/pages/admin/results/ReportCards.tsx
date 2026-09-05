@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api/admin';
 import { useSession } from '@/contexts/session-context';
 import { useAlert } from '@/contexts/alert-context';
+import { generateReportCardPDF } from '@/lib/utils/pdfGenerator';
 
 export default function ReportCards() {
   const navigate = useNavigate();
@@ -181,32 +182,48 @@ export default function ReportCards() {
     setGenerating(true);
     try {
       if (mode === 'single') {
-        // Generate single report card
-        const response = await fetch(
-          `http://localhost:3000/api/admin/results/report-card/${selectedStudent}?termId=${selectedTerm}&sessionId=${selectedSession}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
-            },
-          },
-        );
+        // Generate single report card using jsPDF
+        // Fetch preview data if not already loaded
+        let reportCardData = previewData;
 
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `ReportCard_${selectedStudent}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-          showSuccess('Report card generated successfully');
-        } else {
-          throw new Error('Failed to generate report card');
+        if (!reportCardData) {
+          const response = await fetch(
+            `http://localhost:3000/api/admin/results/report-card/${selectedStudent}/preview?termId=${selectedTerm}&sessionId=${selectedSession}`,
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('auth_token')}`,
+              },
+            },
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            reportCardData = data.data;
+          } else {
+            const errorData = await response
+              .json()
+              .catch(() => ({ message: 'Failed to load preview' }));
+            throw new Error(errorData.message || 'Failed to load preview');
+          }
         }
+
+        const formattedData = {
+          student: reportCardData.student,
+          session: reportCardData.session,
+          term: reportCardData.term,
+          results: reportCardData.results,
+          summary: reportCardData.summary,
+          termRemarks: reportCardData.termRemarks,
+        };
+
+        await generateReportCardPDF(formattedData, {
+          filename: `ReportCard_${selectedStudent}.pdf`,
+        });
+        showSuccess('Report card generated successfully');
       } else {
-        // Generate batch report cards (ZIP)
+        // Generate batch report cards (ZIP) - keep backend approach for batch
         const response = await fetch(
           'http://localhost:3000/api/admin/results/report-cards/batch',
           {
