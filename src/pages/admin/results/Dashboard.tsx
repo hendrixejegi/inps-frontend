@@ -1,7 +1,7 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, FileText, CheckCircle, FileText as FileTextIcon } from "lucide-react";
+import { ArrowLeft, FileText, CheckCircle, FileText as FileTextIcon, Award } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api/admin";
@@ -119,6 +119,10 @@ export default function ResultsDashboard() {
               <FileTextIcon className="mr-2 h-4 w-4" />
               Report Cards
             </Button>
+            <Button variant="outline" onClick={() => navigate("/admin/results/annual-report-cards")}>
+              <Award className="mr-2 h-4 w-4" />
+              Annual Report Cards
+            </Button>
           </div>
         </div>
 
@@ -147,7 +151,7 @@ export default function ResultsDashboard() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
               <Button
                 variant="outline"
                 className="h-24 flex flex-col items-center justify-center gap-2"
@@ -171,6 +175,14 @@ export default function ResultsDashboard() {
               >
                 <FileTextIcon className="h-6 w-6" />
                 <span>View Report Cards</span>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-24 flex flex-col items-center justify-center gap-2"
+                onClick={() => navigate("/admin/results/annual-report-cards")}
+              >
+                <Award className="h-6 w-6" />
+                <span>Annual Report Cards</span>
               </Button>
             </div>
           </CardContent>

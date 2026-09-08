@@ -10,6 +10,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useGlobalErrorHandler } from '@/hooks/useGlobalErrorHandler';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -48,6 +49,7 @@ import ResultsDashboard from './pages/admin/results/Dashboard';
 import ResultsEntry from './pages/admin/results/Entry';
 import ResultsVerification from './pages/admin/results/Verification';
 import ReportCards from './pages/admin/results/ReportCards';
+import AnnualReportCards from './pages/admin/results/AnnualReportCards';
 import Analytics from './pages/admin/results/Analytics';
 import AdminSettings from './pages/admin/Settings';
 import ParentDashboard from './pages/parent/Dashboard';
@@ -88,6 +90,7 @@ function AppContent() {
           <AlertProvider>
             <Toaster />
             <Sonner />
+            <PWAInstallPrompt />
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/auth/login" element={<Login />} />
@@ -192,6 +195,10 @@ function AppContent() {
               <Route
                 path="/admin/results/report-cards"
                 element={<ReportCards />}
+              />
+              <Route
+                path="/admin/results/annual-report-cards"
+                element={<AnnualReportCards />}
               />
               <Route path="/admin/results/analytics" element={<Analytics />} />
               <Route path="/admin/settings" element={<AdminSettings />} />
