@@ -49,6 +49,7 @@ import ResultsDashboard from './pages/admin/results/Dashboard';
 import ResultsEntry from './pages/admin/results/Entry';
 import ResultsVerification from './pages/admin/results/Verification';
 import ReportCards from './pages/admin/results/ReportCards';
+import AnnualReportCards from './pages/admin/results/AnnualReportCards';
 import Analytics from './pages/admin/results/Analytics';
 import AdminSettings from './pages/admin/Settings';
 import ParentDashboard from './pages/parent/Dashboard';
@@ -194,6 +195,10 @@ function AppContent() {
               <Route
                 path="/admin/results/report-cards"
                 element={<ReportCards />}
+              />
+              <Route
+                path="/admin/results/annual-report-cards"
+                element={<AnnualReportCards />}
               />
               <Route path="/admin/results/analytics" element={<Analytics />} />
               <Route path="/admin/settings" element={<AdminSettings />} />

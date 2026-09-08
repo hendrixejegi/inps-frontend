@@ -206,4 +206,24 @@ export const apiClient = {
         return response.data;
       });
   },
+  getBlob: (url: string, params?: unknown) => {
+    console.log(`📡 [API Client] GET BLOB request initiated:`, { url, params });
+    return client.get(url, { params, responseType: 'blob' }).then((response) => {
+      console.log(`📡 [API Client] GET BLOB request completed:`, {
+        url,
+        status: response.status,
+      });
+      return response.data;
+    });
+  },
+  postBlob: (url: string, data?: unknown) => {
+    console.log(`📡 [API Client] POST BLOB request initiated:`, { url, data });
+    return client.post(url, data, { responseType: 'blob' }).then((response) => {
+      console.log(`📡 [API Client] POST BLOB request completed:`, {
+        url,
+        status: response.status,
+      });
+      return response.data;
+    });
+  },
 };
