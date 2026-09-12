@@ -10,11 +10,15 @@ import {
 } from '@/components/ui/select';
 import { Download, FileText, Users, Loader2, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { adminApi } from '@/lib/api/admin';
 import { useSession } from '@/contexts/session-context';
 import { useAlert } from '@/contexts/alert-context';
-import { generateReportCardPDF } from '@/lib/utils/pdfGenerator';
+import { ResultsTable } from '@/components/results/ResultsTable';
+import { ResultsSummary } from '@/components/results/ResultsSummary';
+import { ReportCardLayout } from '@/components/results/ReportCardLayout';
+import { transformAdminToUnified } from '@/lib/types/results';
+import { generatePDFFromRef } from '@/lib/utils/html2pdfGenerator';
 
 export default function ReportCards() {
   const navigate = useNavigate();
@@ -35,6 +39,7 @@ export default function ReportCards() {
   const [mode, setMode] = useState<'single' | 'batch'>('single');
   const [previewData, setPreviewData] = useState<any>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const reportCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSessions();
@@ -182,7 +187,7 @@ export default function ReportCards() {
     setGenerating(true);
     try {
       if (mode === 'single') {
-        // Generate single report card using jsPDF
+        // Generate single report card using html2pdf.js for WYSIWYG output
         // Fetch preview data if not already loaded
         let reportCardData = previewData;
 
@@ -209,19 +214,11 @@ export default function ReportCards() {
           }
         }
 
-        const formattedData = {
-          student: reportCardData.student,
-          session: reportCardData.session,
-          term: reportCardData.term,
-          results: reportCardData.results,
-          summary: reportCardData.summary,
-          termRemarks: reportCardData.termRemarks,
-        };
-
-        await generateReportCardPDF(formattedData, {
-          filename: `ReportCard_${selectedStudent}.pdf`,
-        });
-        showSuccess('Report card generated successfully');
+        setPreviewData(reportCardData);
+        setShowPreview(true);
+        showSuccess(
+          'Report card preview is ready. Use Download PDF to save it.',
+        );
       } else {
         // Generate batch report cards (ZIP) - keep backend approach for batch
         const response = await fetch(
@@ -504,273 +501,28 @@ export default function ReportCards() {
                     </Button>
                   </div>
 
-                  {/* PDF-style Preview */}
-                  <div
-                    className="p-8 bg-white"
-                    style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}
-                  >
-                    {/* School Header */}
-                    <div className="text-center mb-6">
-                      <img
-                        src="https://res.cloudinary.com/dligmvsem/image/upload/v1786435836/logoo_ddwy4c.png"
-                        alt="School Logo"
-                        className="h-20 mx-auto mb-4"
+                  {/* PDF-style Preview using unified ReportCardLayout */}
+                  <div className="overflow-x-auto">
+                    <div ref={reportCardRef} className="w-[794px]">
+                      <ReportCardLayout
+                        data={transformAdminToUnified(previewData)}
+                        showAsPreview={true}
+                        showControls={true}
+                        pdfFilename={`ReportCard_${selectedStudent}.pdf`}
+                        onGeneratePDF={async (filename) => {
+                          try {
+                            await generatePDFFromRef(reportCardRef, {
+                              filename,
+                            });
+                            showSuccess('Report card generated successfully');
+                          } catch (error) {
+                            showAlert(
+                              'Failed to generate PDF. Please try again.',
+                              'error',
+                            );
+                          }
+                        }}
                       />
-                      <h1 className="text-2xl font-bold text-blue-900">
-                        International Nursery and Primary School
-                      </h1>
-                      <p className="text-sm text-blue-700 font-semibold">
-                        Trans-Ekulu Enugu
-                      </p>
-                    </div>
-
-                    {/* Report Card Title */}
-                    <div className="text-center mb-6">
-                      <h2 className="text-xl font-bold text-gray-900 bg-blue-100 py-2 px-4 rounded-lg inline-block">
-                        STUDENT REPORT CARD
-                      </h2>
-                    </div>
-
-                    {/* Student Information */}
-                    <div className="mb-6 p-4 border-2 border-blue-300 rounded-lg bg-blue-50">
-                      <h3 className="text-sm font-bold text-blue-900 mb-3 uppercase">
-                        Student Information
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <p>
-                          <span className="font-semibold text-gray-700">
-                            Name:
-                          </span>{' '}
-                          {previewData.student?.firstName}{' '}
-                          {previewData.student?.middleName || ''}{' '}
-                          {previewData.student?.lastName}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-gray-700">
-                            Admission Number:
-                          </span>{' '}
-                          {previewData.student?.admissionNumber}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-gray-700">
-                            Class:
-                          </span>{' '}
-                          {previewData.student?.className || 'N/A'}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-gray-700">
-                            Academic Session:
-                          </span>{' '}
-                          {previewData.session}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-gray-700">
-                            Term:
-                          </span>{' '}
-                          {previewData.term}
-                        </p>
-                        <p>
-                          <span className="font-semibold text-gray-700">
-                            Class Teacher:
-                          </span>{' '}
-                          {previewData.student?.classTeacher
-                            ? `${previewData.student.classTeacher.firstName} ${previewData.student.classTeacher.lastName}`
-                            : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Academic Performance Table */}
-                    {previewData.results && previewData.results.length > 0 && (
-                      <div className="mb-6">
-                        <h3 className="text-sm font-bold text-blue-900 mb-3 uppercase">
-                          Academic Performance
-                        </h3>
-                        <div className="border-2 border-blue-300 rounded-lg overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead className="bg-blue-600 text-white">
-                              <tr>
-                                <th className="text-left p-2 border-b border-blue-400 font-semibold">
-                                  Subject
-                                </th>
-                                <th className="text-center p-2 border-b border-blue-400 font-semibold">
-                                  CA1
-                                </th>
-                                <th className="text-center p-2 border-b border-blue-400 font-semibold">
-                                  CA2
-                                </th>
-                                <th className="text-center p-2 border-b border-blue-400 font-semibold">
-                                  Exam
-                                </th>
-                                <th className="text-center p-2 border-b border-blue-400 font-semibold">
-                                  Total
-                                </th>
-                                <th className="text-center p-2 border-b border-blue-400 font-semibold">
-                                  Grade
-                                </th>
-                                <th className="text-center p-2 border-b border-blue-400 font-semibold">
-                                  Position
-                                </th>
-                                <th className="text-left p-2 border-b border-blue-400 font-semibold">
-                                  Remark
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {previewData.results.map(
-                                (result: any, index: number) => (
-                                  <tr
-                                    key={index}
-                                    className={
-                                      index % 2 === 0
-                                        ? 'bg-white'
-                                        : 'bg-blue-50'
-                                    }
-                                  >
-                                    <td className="p-2 border-b border-blue-200">
-                                      {result.subject?.subjectName || 'N/A'}
-                                    </td>
-                                    <td className="text-center p-2 border-b border-blue-200">
-                                      {result.ca1Score?.toFixed(0) || '-'}
-                                    </td>
-                                    <td className="text-center p-2 border-b border-blue-200">
-                                      {result.ca2Score?.toFixed(0) || '-'}
-                                    </td>
-                                    <td className="text-center p-2 border-b border-blue-200">
-                                      {result.examScore?.toFixed(0) || '-'}
-                                    </td>
-                                    <td className="text-center p-2 border-b border-blue-200 font-semibold text-blue-900">
-                                      {result.total?.toFixed(0) || '-'}
-                                    </td>
-                                    <td className="text-center p-2 border-b border-blue-200 font-semibold text-blue-900">
-                                      {result.grade || '-'}
-                                    </td>
-                                    <td className="text-center p-2 border-b border-blue-200">
-                                      {result.position?.toString() || '-'}
-                                    </td>
-                                    <td className="text-left p-2 border-b border-blue-200 text-xs">
-                                      {result.subjectTeacherRemark || '-'}
-                                    </td>
-                                  </tr>
-                                ),
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Summary Statistics */}
-                    {previewData.summary && (
-                      <div className="mb-6 p-4 border-2 border-blue-300 rounded-lg bg-green-50">
-                        <h3 className="text-sm font-bold text-blue-900 mb-3 uppercase">
-                          Summary Statistics
-                        </h3>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <p>
-                            <span className="font-semibold text-gray-700">
-                              Total Subjects:
-                            </span>{' '}
-                            {previewData.summary.totalSubjects}
-                          </p>
-                          <p>
-                            <span className="font-semibold text-gray-700">
-                              Average Score:
-                            </span>{' '}
-                            {previewData.summary.averageScore?.toFixed(2)}
-                          </p>
-                          <p>
-                            <span className="font-semibold text-gray-700">
-                              Subjects Passed:
-                            </span>{' '}
-                            {previewData.summary.passedSubjects}/
-                            {previewData.summary.totalSubjects}
-                          </p>
-                          <p>
-                            <span className="font-semibold text-gray-700">
-                              Class Size:
-                            </span>{' '}
-                            {previewData.summary.classEnrollmentCount} students
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Remarks */}
-                    {previewData.termRemarks && (
-                      <div className="mb-6 p-4 border-2 border-blue-300 rounded-lg bg-yellow-50">
-                        <h3 className="text-sm font-bold text-blue-900 mb-3 uppercase">
-                          Remarks
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                          <p>
-                            <span className="font-semibold text-gray-700">
-                              Class Teacher:
-                            </span>{' '}
-                            {previewData.termRemarks.classTeacherRemark ||
-                              'No remark'}
-                          </p>
-                          <p>
-                            <span className="font-semibold text-gray-700">
-                              Head Teacher:
-                            </span>{' '}
-                            {previewData.termRemarks.headTeacherRemark ||
-                              'No remark'}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Grading Scale */}
-                    <div className="mb-6 p-4 border-2 border-blue-300 rounded-lg bg-purple-50">
-                      <h3 className="text-sm font-bold text-blue-900 mb-3 uppercase">
-                        Grading Scale
-                      </h3>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <p>
-                          <span className="font-bold text-green-700">A:</span>{' '}
-                          70-100 - Excellent
-                        </p>
-                        <p>
-                          <span className="font-bold text-blue-700">C:</span>{' '}
-                          55-59 - Good
-                        </p>
-                        <p>
-                          <span className="font-bold text-yellow-700">D:</span>{' '}
-                          50-54 - Fair
-                        </p>
-                        <p>
-                          <span className="font-bold text-red-700">F:</span>{' '}
-                          0-44 - Fail
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-8 pt-4 border-t-2 border-blue-300">
-                      <p className="text-center text-xs text-gray-600 mb-4">
-                        This is an official document from International Nursery
-                        and Primary School
-                      </p>
-                      <p className="text-center text-xs text-gray-600 mb-6">
-                        Generated on: {new Date().toLocaleDateString()}
-                      </p>
-
-                      {/* Signature placeholders */}
-                      <div className="flex justify-between mt-8">
-                        <div className="text-center">
-                          <div className="border-b-2 border-blue-400 w-40 mb-2"></div>
-                          <p className="text-sm font-semibold text-blue-900">
-                            Class Teacher
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <div className="border-b-2 border-blue-400 w-40 mb-2"></div>
-                          <p className="text-sm font-semibold text-blue-900">
-                            Head Teacher
-                          </p>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>

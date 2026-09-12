@@ -1,6 +1,31 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { ReportCardData, PDFOptions } from '@/lib/types/pdf';
+import type {
+  UnifiedResultsData,
+  PDFOptions,
+  UnifiedSubjectResult,
+} from '@/lib/types/results';
+
+/**
+ * PDF Generation Strategy
+ *
+ * This file provides two approaches for PDF generation:
+ *
+ * 1. jsPDF (generateResultsPDF): Programmatic PDF generation
+ *    - Best for: Batch generation, simple layouts, high performance
+ *    - Use when: Generating multiple documents, need precise control over layout
+ *    - Limitations: Complex CSS/Tailwind styling may not render perfectly
+ *
+ * 2. html2pdf.js (generateReportCardFromRef): WYSIWYG PDF generation
+ *    - Best for: Single documents, complex styling, visual fidelity
+ *    - Use when: Need exact match to screen preview, rich HTML/CSS styling
+ *    - Import from: '@/lib/utils/html2pdfGenerator'
+ *    - Limitations: Slower performance, requires DOM element reference
+ *
+ * Recommendation:
+ * - Use html2pdf.js for single report cards where visual accuracy is important
+ * - Use jsPDF for batch generation or when performance is critical
+ */
 
 // School branding configuration
 const SCHOOL_CONFIG = {
@@ -55,8 +80,8 @@ const GRADING_SCALE = [
 /**
  * Generate a professional report card PDF using jsPDF and jsPDF-autotable
  */
-export const generateReportCardPDF = async (
-  data: ReportCardData,
+export const generateResultsPDF = async (
+  data: UnifiedResultsData,
   options: PDFOptions = {},
 ): Promise<void> => {
   const {
@@ -76,7 +101,7 @@ export const generateReportCardPDF = async (
   let yPos = 10;
 
   // Add school header
-  await addSchoolHeader(doc, yPos);
+  addSchoolHeader(doc, yPos);
   yPos += 30;
 
   // Add report card title
@@ -98,8 +123,8 @@ export const generateReportCardPDF = async (
   }
 
   // Add remarks if available
-  if (data.termRemarks) {
-    yPos = addRemarks(doc, yPos, data.termRemarks);
+  if (data.remarks) {
+    yPos = addRemarks(doc, yPos, data.remarks);
     yPos += 10;
   }
 
@@ -114,10 +139,13 @@ export const generateReportCardPDF = async (
   doc.save(filename);
 };
 
+// Keep backward compatibility
+export const generateReportCardPDF = generateResultsPDF;
+
 /**
  * Add school header with logo and name
  */
-const addSchoolHeader = async (doc: jsPDF, yPos: number): Promise<void> => {
+const addSchoolHeader = (doc: jsPDF, yPos: number): void => {
   // Try to add logo centered above text
   try {
     // Center the logo (page width is 210mm, so center is 105mm)
@@ -159,7 +187,7 @@ const addReportCardTitle = (doc: jsPDF, yPos: number): void => {
 const addStudentInfo = (
   doc: jsPDF,
   yPos: number,
-  data: ReportCardData,
+  data: UnifiedResultsData,
 ): number => {
   // Student info box
   doc.setDrawColor(PRIMARY_COLOR.r, PRIMARY_COLOR.g, PRIMARY_COLOR.b);
@@ -179,7 +207,7 @@ const addStudentInfo = (
 
   const studentName = `${data.student.firstName} ${data.student.middleName || ''} ${data.student.lastName}`;
   const classTeacher = data.student.classTeacher
-    ? `${data.student.classTeacher.firstName} ${data.student.classTeacher.lastName}`
+    ? `${data.student.classTeacher.firstName || ''} ${data.student.classTeacher.lastName || ''}`
     : 'N/A';
 
   const details = [
@@ -201,7 +229,11 @@ const addStudentInfo = (
 /**
  * Add academic performance table using jsPDF-autotable
  */
-const addResultsTable = (doc: jsPDF, yPos: number, results: any[]): number => {
+const addResultsTable = (
+  doc: jsPDF,
+  yPos: number,
+  results: UnifiedSubjectResult[],
+): number => {
   if (!results || results.length === 0) return yPos;
 
   // Title
@@ -215,12 +247,12 @@ const addResultsTable = (doc: jsPDF, yPos: number, results: any[]): number => {
     ['Subject', 'CA1', 'CA2', 'Exam', 'Total', 'Grade', 'Position', 'Remark'],
   ];
   const tableBody = results.map((result) => [
-    result.subject?.subjectName || 'N/A',
-    result.ca1Score?.toFixed(0) || '-',
-    result.ca2Score?.toFixed(0) || '-',
-    result.examScore?.toFixed(0) || '-',
-    result.total?.toFixed(0) || '-',
-    result.grade || '-',
+    result.subject.subjectName || 'N/A',
+    result.scores.ca1.toFixed(0) || '-',
+    result.scores.ca2.toFixed(0) || '-',
+    result.scores.exam.toFixed(0) || '-',
+    result.scores.total.toFixed(0) || '-',
+    result.scores.grade || '-',
     result.position?.toString() || '-',
     result.subjectTeacherRemark || '-',
   ]);
@@ -268,7 +300,7 @@ const addResultsTable = (doc: jsPDF, yPos: number, results: any[]): number => {
 const addSummaryStatistics = (
   doc: jsPDF,
   yPos: number,
-  summary: any,
+  summary: UnifiedResultsData['summary'],
 ): number => {
   // Summary box
   doc.setDrawColor(SECONDARY_COLOR.r, SECONDARY_COLOR.g, SECONDARY_COLOR.b);
@@ -289,11 +321,11 @@ const addSummaryStatistics = (
   const stats = [
     [
       `Total Subjects: ${summary.totalSubjects}`,
-      `Average Score: ${summary.averageScore?.toFixed(2)}`,
+      `Average Score: ${summary.averageScore.toFixed(2)}`,
     ],
     [
-      `Subjects Passed: ${summary.passedSubjects}/${summary.totalSubjects}`,
-      `Class Size: ${summary.classEnrollmentCount} students`,
+      `Subjects Passed: ${summary.subjectsPassed}/${summary.totalSubjects}`,
+      `Class Size: ${summary.classEnrollmentCount || 'N/A'} students`,
     ],
   ];
 
@@ -310,7 +342,11 @@ const addSummaryStatistics = (
 /**
  * Add remarks section
  */
-const addRemarks = (doc: jsPDF, yPos: number, remarks: any): number => {
+const addRemarks = (
+  doc: jsPDF,
+  yPos: number,
+  remarks: UnifiedResultsData['remarks'],
+): number => {
   // Remarks box
   doc.setDrawColor(ORANGE_COLOR.r, ORANGE_COLOR.g, ORANGE_COLOR.b);
   doc.setLineWidth(0.5);
@@ -327,8 +363,8 @@ const addRemarks = (doc: jsPDF, yPos: number, remarks: any): number => {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(TEXT_COLOR.r, TEXT_COLOR.g, TEXT_COLOR.b);
 
-  const classTeacherRemark = remarks.classTeacherRemark || 'No remark';
-  const headTeacherRemark = remarks.headTeacherRemark || 'No remark';
+  const classTeacherRemark = remarks?.classTeacherRemark || 'No remark';
+  const headTeacherRemark = remarks?.headTeacherRemark || 'No remark';
 
   doc.text(`Class Teacher: ${classTeacherRemark}`, 25, yPos + 10);
   doc.text(`Head Teacher: ${headTeacherRemark}`, 25, yPos + 15);
@@ -367,7 +403,11 @@ const addGradingScale = (doc: jsPDF, yPos: number): number => {
 /**
  * Add footer with signatures and date
  */
-const addFooter = (doc: jsPDF, yPos: number, data: ReportCardData): void => {
+const addFooter = (
+  doc: jsPDF,
+  yPos: number,
+  data: UnifiedResultsData,
+): void => {
   // Official document text
   doc.setFontSize(8);
   doc.setFont('helvetica', 'italic');
@@ -405,45 +445,29 @@ const addFooter = (doc: jsPDF, yPos: number, data: ReportCardData): void => {
  * Generate PDF from parent results data
  */
 export const generateParentResultsPDF = async (
-  childData: any,
-  resultsData: any,
+  childData: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    admissionNumber: string;
+    class?: { name: string };
+    middleName?: string;
+  },
+  resultsData: {
+    session: string;
+    term: string;
+    results?: unknown[];
+    summary?: unknown;
+    classTeacherRemark?: string;
+    headTeacherRemark?: string;
+  },
   options: PDFOptions = {},
 ): Promise<void> => {
-  // Transform parent data to report card format
-  const reportCardData: ReportCardData = {
-    student: {
-      firstName: childData.firstName,
-      middleName: childData.middleName,
-      lastName: childData.lastName,
-      admissionNumber: childData.admissionNumber,
-      className: childData.class?.name,
-    },
-    session: resultsData.session,
-    term: resultsData.term,
-    results:
-      resultsData.results?.map((result: any) => ({
-        subject: result.subject,
-        ca1Score: result.scores?.ca1,
-        ca2Score: result.scores?.ca2,
-        examScore: result.scores?.exam,
-        total: result.scores?.total,
-        grade: result.scores?.grade,
-        position: result.position,
-        subjectTeacherRemark: result.subjectTeacherRemark,
-      })) || [],
-    summary: resultsData.summary
-      ? {
-          totalSubjects: resultsData.summary.totalSubjects,
-          averageScore: resultsData.summary.averageScore,
-          passedSubjects: resultsData.summary.subjectsPassed,
-          classEnrollmentCount: 0, // Not available in parent data
-        }
-      : undefined,
-    termRemarks: {
-      classTeacherRemark: resultsData.classTeacherRemark,
-      headTeacherRemark: resultsData.headTeacherRemark,
-    },
-  };
+  // Import transformation function dynamically to avoid circular dependency
+  const { transformParentToUnified } = await import('@/lib/types/results');
 
-  await generateReportCardPDF(reportCardData, options);
+  // Transform parent data to unified format
+  const unifiedData = transformParentToUnified(resultsData, childData);
+
+  await generateResultsPDF(unifiedData, options);
 };

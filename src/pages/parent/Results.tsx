@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ParentLayout } from '@/components/layout/ParentLayout';
@@ -13,24 +13,41 @@ import {
 } from '@/components/ui/select';
 import { parentApi } from '@/lib/api/parent';
 import { Child, ChildResults } from '@/lib/types/parent';
-import { ResultsTable } from '@/components/parent/ResultsTable';
-import { ResultsSummaryStats } from '@/components/parent/ResultsSummary';
-import { WalletCards, Loader2, AlertCircle, Download } from 'lucide-react';
+import { ResultsTable } from '@/components/results/ResultsTable';
+import { ResultsSummary } from '@/components/results/ResultsSummary';
+import { ReportCardLayout } from '@/components/results/ReportCardLayout';
+import {
+  WalletCards,
+  Loader2,
+  AlertCircle,
+  Download,
+  FileText,
+} from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { generateParentResultsPDF } from '@/lib/utils/pdfGenerator';
+import { generatePDFFromRef } from '@/lib/utils/html2pdfGenerator';
 import { useAlert } from '@/contexts/alert-context';
+import { transformParentToUnified } from '@/lib/types/results';
+
+interface Session {
+  id: string;
+  session: string;
+}
 
 export default function ParentResults() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { showAlert } = useAlert();
+  const { showAlert, showSuccess } = useAlert();
 
   const [selectedChildId, setSelectedChildId] = useState(
     searchParams.get('studentId') || '',
   );
   const [selectedSessionId, setSelectedSessionId] = useState('');
   const [selectedTermId, setSelectedTermId] = useState('');
-  const [viewMode, setViewMode] = useState<'detail' | 'summary'>('detail');
+  const [viewMode, setViewMode] = useState<'detail' | 'summary' | 'reportcard'>(
+    'detail',
+  );
+  const reportCardRef = useRef<HTMLDivElement>(null);
 
   const { data: childrenData, isLoading: childrenLoading } = useQuery({
     queryKey: ['parent-children'],
@@ -95,7 +112,7 @@ export default function ParentResults() {
     if (urlChildId && urlChildId !== selectedChildId) {
       setSelectedChildId(urlChildId);
     }
-  }, [searchParams]);
+  }, [searchParams, selectedChildId]);
 
   const handleChildChange = (childId: string) => {
     setSelectedChildId(childId);
@@ -122,9 +139,14 @@ export default function ParentResults() {
         return;
       }
 
-      await generateParentResultsPDF(child, results, {
-        filename: `ReportCard_${child.admissionNumber}.pdf`,
-      });
+      // For report card mode, the PDF generation is handled by the component
+      // For other modes, use the existing jsPDF approach
+      if (viewMode !== 'reportcard') {
+        await generateParentResultsPDF(child, results, {
+          filename: `ReportCard_${child.admissionNumber}.pdf`,
+        });
+        showSuccess('Report card generated successfully');
+      }
     } catch (error) {
       console.error('Error generating PDF:', error);
       showAlert('Failed to generate PDF. Please try again.', 'error');
@@ -180,7 +202,7 @@ export default function ParentResults() {
                     <SelectValue placeholder="Select session" />
                   </SelectTrigger>
                   <SelectContent>
-                    {sessions.map((session: any) => (
+                    {sessions.map((session: Session) => (
                       <SelectItem key={session.id} value={session.id}>
                         {session.session}
                       </SelectItem>
@@ -210,7 +232,7 @@ export default function ParentResults() {
                 <label className="text-sm font-medium">View Mode</label>
                 <Select
                   value={viewMode}
-                  onValueChange={(value: 'detail' | 'summary') =>
+                  onValueChange={(value: 'detail' | 'summary' | 'reportcard') =>
                     setViewMode(value)
                   }
                 >
@@ -220,6 +242,7 @@ export default function ParentResults() {
                   <SelectContent>
                     <SelectItem value="detail">Detailed View</SelectItem>
                     <SelectItem value="summary">Summary View</SelectItem>
+                    <SelectItem value="reportcard">Report Card</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -248,15 +271,17 @@ export default function ParentResults() {
                   </>
                 )}
               </Button>
-              <Button
-                onClick={handleDownloadPDF}
-                disabled={!results || resultsLoading}
-                variant="outline"
-                className="flex-1"
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download PDF
-              </Button>
+              {viewMode !== 'reportcard' && (
+                <Button
+                  onClick={handleDownloadPDF}
+                  disabled={!results || resultsLoading}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PDF
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -284,7 +309,7 @@ export default function ParentResults() {
             {/* Summary View */}
             {viewMode === 'summary' && results.summary && (
               <>
-                <ResultsSummaryStats summary={results.summary} />
+                <ResultsSummary summary={results.summary} />
 
                 <Card>
                   <CardHeader>
@@ -314,7 +339,14 @@ export default function ParentResults() {
             {viewMode === 'detail' &&
               results.results &&
               results.results.length > 0 && (
-                <ResultsTable results={results.results} />
+                <ResultsTable
+                  results={
+                    transformParentToUnified(
+                      results,
+                      children.find((c: Child) => c.id === selectedChildId),
+                    ).results
+                  }
+                />
               )}
 
             {viewMode === 'detail' &&
@@ -326,6 +358,34 @@ export default function ParentResults() {
                   </AlertDescription>
                 </Alert>
               )}
+
+            {/* Report Card View */}
+            {viewMode === 'reportcard' && (
+              <div className="overflow-x-auto">
+                <div ref={reportCardRef} className="w-[794px]">
+                  <ReportCardLayout
+                    data={transformParentToUnified(
+                      results,
+                      children.find((c: Child) => c.id === selectedChildId),
+                    )}
+                    showAsPreview={true}
+                    showControls={true}
+                    pdfFilename={`ReportCard_${children.find((c: Child) => c.id === selectedChildId)?.admissionNumber}.pdf`}
+                    onGeneratePDF={async (filename) => {
+                      try {
+                        await generatePDFFromRef(reportCardRef, { filename });
+                        showSuccess('Report card generated successfully');
+                      } catch (error) {
+                        showAlert(
+                          'Failed to generate PDF. Please try again.',
+                          'error',
+                        );
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
