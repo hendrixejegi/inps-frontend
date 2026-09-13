@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/select';
 import { Download, FileText, Users, Loader2, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api/admin';
 import { useSession } from '@/contexts/session-context';
 import { useAlert } from '@/contexts/alert-context';
@@ -18,7 +18,7 @@ import { ResultsTable } from '@/components/results/ResultsTable';
 import { ResultsSummary } from '@/components/results/ResultsSummary';
 import { ReportCardLayout } from '@/components/results/ReportCardLayout';
 import { transformAdminToUnified } from '@/lib/types/results';
-import { generatePDFFromRef } from '@/lib/utils/html2pdfGenerator';
+import { downloadReportCardPDF } from '@/lib/utils/reactPdfReportCard';
 
 export default function ReportCards() {
   const navigate = useNavigate();
@@ -39,7 +39,6 @@ export default function ReportCards() {
   const [mode, setMode] = useState<'single' | 'batch'>('single');
   const [previewData, setPreviewData] = useState<any>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const reportCardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSessions();
@@ -503,7 +502,7 @@ export default function ReportCards() {
 
                   {/* PDF-style Preview using unified ReportCardLayout */}
                   <div className="overflow-x-auto">
-                    <div ref={reportCardRef} className="w-[794px]">
+                    <div className="w-[794px]">
                       <ReportCardLayout
                         data={transformAdminToUnified(previewData)}
                         showAsPreview={true}
@@ -511,9 +510,10 @@ export default function ReportCards() {
                         pdfFilename={`ReportCard_${selectedStudent}.pdf`}
                         onGeneratePDF={async (filename) => {
                           try {
-                            await generatePDFFromRef(reportCardRef, {
+                            await downloadReportCardPDF(
+                              transformAdminToUnified(previewData),
                               filename,
-                            });
+                            );
                             showSuccess('Report card generated successfully');
                           } catch (error) {
                             showAlert(

@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { UnifiedResultsData } from '@/lib/types/results';
 import { Button } from '@/components/ui/button';
 import { Download, Printer, Loader2 } from 'lucide-react';
-import { generatePDFFromRef } from '@/lib/utils/html2pdfGenerator';
+import { downloadReportCardPDF } from '@/lib/utils/reactPdfReportCard';
 
 interface ReportCardLayoutProps {
   data: UnifiedResultsData;
@@ -30,10 +30,9 @@ export function ReportCardLayout({
       if (onGeneratePDF) {
         await onGeneratePDF(pdfFilename);
       } else {
-        // Default PDF generation using html2pdf.js
         const filename =
           pdfFilename || `ReportCard_${data.student.admissionNumber}.pdf`;
-        await generatePDFFromRef(reportCardRef, { filename });
+        await downloadReportCardPDF(data, filename);
       }
     } catch (error) {
       console.error('Error generating PDF:', error);

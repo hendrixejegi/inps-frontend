@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { ParentLayout } from '@/components/layout/ParentLayout';
@@ -26,7 +26,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { generateParentResultsPDF } from '@/lib/utils/pdfGenerator';
-import { generatePDFFromRef } from '@/lib/utils/html2pdfGenerator';
+import { downloadReportCardPDF } from '@/lib/utils/reactPdfReportCard';
 import { useAlert } from '@/contexts/alert-context';
 import { transformParentToUnified } from '@/lib/types/results';
 
@@ -47,7 +47,6 @@ export default function ParentResults() {
   const [viewMode, setViewMode] = useState<'detail' | 'summary' | 'reportcard'>(
     'detail',
   );
-  const reportCardRef = useRef<HTMLDivElement>(null);
 
   const { data: childrenData, isLoading: childrenLoading } = useQuery({
     queryKey: ['parent-children'],
@@ -362,7 +361,7 @@ export default function ParentResults() {
             {/* Report Card View */}
             {viewMode === 'reportcard' && (
               <div className="overflow-x-auto">
-                <div ref={reportCardRef} className="w-[794px]">
+                <div className="w-[794px]">
                   <ReportCardLayout
                     data={transformParentToUnified(
                       results,
@@ -373,7 +372,15 @@ export default function ParentResults() {
                     pdfFilename={`ReportCard_${children.find((c: Child) => c.id === selectedChildId)?.admissionNumber}.pdf`}
                     onGeneratePDF={async (filename) => {
                       try {
-                        await generatePDFFromRef(reportCardRef, { filename });
+                        await downloadReportCardPDF(
+                          transformParentToUnified(
+                            results,
+                            children.find(
+                              (c: Child) => c.id === selectedChildId,
+                            ),
+                          ),
+                          filename,
+                        );
                         showSuccess('Report card generated successfully');
                       } catch (error) {
                         showAlert(
