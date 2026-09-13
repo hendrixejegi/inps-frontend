@@ -489,4 +489,33 @@ export const adminApi = {
   }): Promise<ApiResponse<any>> {
     return apiClient.get<ApiResponse<any>>("/api/admin/results/by-class", params);
   },
+
+  // Annual Results
+  async getAnnualReportCard(studentId: string, sessionId: string): Promise<ApiResponse<any>> {
+    return apiClient.get<ApiResponse<any>>(`/api/admin/results/annual-report-card/${studentId}`, { sessionId });
+  },
+
+  async getAnnualReportCardPreview(studentId: string, sessionId: string): Promise<ApiResponse<any>> {
+    return apiClient.get<ApiResponse<any>>(`/api/admin/results/annual-report-card/${studentId}/preview`, { sessionId });
+  },
+
+  async getAnnualReportCardPDF(studentId: string, sessionId: string): Promise<Blob> {
+    return apiClient.getBlob(`/api/admin/results/annual-report-card-pdf/${studentId}`, { sessionId });
+  },
+
+  async generateBatchAnnualReportCards(classId: string, sessionId: string, format: 'zip' | 'individual' = 'zip'): Promise<Blob | ApiResponse<any>> {
+    if (format === 'zip') {
+      return apiClient.postBlob('/api/admin/results/annual-report-cards-pdf/batch', { classId, sessionId, format });
+    } else {
+      return apiClient.post<ApiResponse<any>>('/api/admin/results/annual-report-cards/batch', { classId, sessionId, format });
+    }
+  },
+
+  async getAnnualStatistics(classId: string, sessionId: string): Promise<ApiResponse<any>> {
+    return apiClient.get<ApiResponse<any>>('/api/admin/results/annual-statistics', { classId, sessionId });
+  },
+
+  async getAnnualResultsByClass(classId: string, sessionId: string): Promise<ApiResponse<any>> {
+    return apiClient.get<ApiResponse<any>>('/api/admin/results/annual-by-class', { classId, sessionId });
+  },
 };
