@@ -32,6 +32,7 @@ export interface Child {
   status: 'ACTIVE' | 'INACTIVE';
 }
 
+// @deprecated Use UnifiedSubjectResult from @/lib/types/results instead
 export interface SubjectResult {
   subject: {
     id: string;
@@ -49,6 +50,7 @@ export interface SubjectResult {
   position?: number;
 }
 
+// @deprecated Use UnifiedResultsData from @/lib/types/results instead
 export interface ChildResults {
   results: SubjectResult[];
   classTeacherRemark: string;
@@ -58,6 +60,7 @@ export interface ChildResults {
   term: string;
 }
 
+// @deprecated Use summary from UnifiedResultsData instead
 export interface ResultsSummary {
   totalSubjects: number;
   subjectsPassed: number;
