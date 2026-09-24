@@ -624,6 +624,24 @@ export default function EditStaff() {
                             <SelectItem value={StaffRole.STOREKEEPER}>
                               Storekeeper
                             </SelectItem>
+                            <SelectItem value={StaffRole.NURSE}>
+                              Nurse
+                            </SelectItem>
+                            <SelectItem value={StaffRole.SUPERVISOR}>
+                              Supervisor
+                            </SelectItem>
+                            <SelectItem value={StaffRole.ICT}>
+                              ICT
+                            </SelectItem>
+                            <SelectItem value={StaffRole.CLEANERS}>
+                              Cleaners
+                            </SelectItem>
+                            <SelectItem value={StaffRole.SECURITY}>
+                              Security
+                            </SelectItem>
+                            <SelectItem value={StaffRole.OTHERS}>
+                              Others
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       )}
