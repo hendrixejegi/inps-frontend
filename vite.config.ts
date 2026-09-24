@@ -37,7 +37,20 @@ export default defineConfig(() => ({
             type: 'image/png'
           }
         ]
-      }
+      },
+      workbox: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5 MB limit
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: 365 * 24 * 60 * 60, // 1 year
+            },
+          },
+        ],
+      },
     })
   ],
   resolve: {
