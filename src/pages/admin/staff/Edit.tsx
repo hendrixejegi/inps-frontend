@@ -152,12 +152,15 @@ export default function EditStaff() {
 
   useEffect(() => {
     if (staff?.data) {
-      setValue('firstName', staff.data.firstName);
-      setValue('lastName', staff.data.lastName);
+      // Basic information
+      setValue('firstName', staff.data.firstName || '');
+      setValue('lastName', staff.data.lastName || '');
       setValue('middleName', staff.data.middleName || '');
-      setValue('email', staff.data.email);
-      setValue('phone', staff.data.phone);
+      setValue('email', staff.data.email || '');
+      setValue('phone', staff.data.phone || '');
       setValue('role', staff.data.role);
+      
+      // Personal information
       setValue('gender', staff.data.gender);
       setValue('dateOfBirth', staff.data.dateOfBirth?.split('T')[0] || '');
       setValue('address', staff.data.address || '');
@@ -167,17 +170,19 @@ export default function EditStaff() {
       setValue('lga', staff.data.lga || '');
       setSelectedState(staff.data.state || '');
       setValue('religion', staff.data.religion || '');
+      
+      // Professional information
       setValue('subjectId', staff.data.subjectId || '');
       setValue('yearsOfExperience', staff.data.yearsOfExperience);
-      setValue(
-        'dateOfEmployment',
-        staff.data.dateOfEmployment?.split('T')[0] || '',
-      );
+      setValue('dateOfEmployment', staff.data.dateOfEmployment?.split('T')[0] || '');
+      
+      // Next of kin information
       setValue('nextOfKinName', staff.data.nextOfKinName || '');
       setValue('nextOfKinPhone', staff.data.nextOfKinPhone || '');
       setValue('nextOfKinRelationship', staff.data.nextOfKinRelationship || '');
       setValue('nextOfKinAddress', staff.data.nextOfKinAddress || '');
 
+      // Arrays
       if (staff.data.qualifications) {
         setQualifications(staff.data.qualifications);
       }
@@ -472,10 +477,8 @@ export default function EditStaff() {
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={Gender.MALE}>Male</SelectItem>
-                            <SelectItem value={Gender.FEMALE}>
-                              Female
-                            </SelectItem>
+                            <SelectItem value="MALE">Male</SelectItem>
+                            <SelectItem value="FEMALE">Female</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
@@ -495,21 +498,11 @@ export default function EditStaff() {
                             <SelectValue placeholder="Select marital status" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={MaritalStatus.SINGLE}>
-                              Single
-                            </SelectItem>
-                            <SelectItem value={MaritalStatus.MARRIED}>
-                              Married
-                            </SelectItem>
-                            <SelectItem value={MaritalStatus.DIVORCED}>
-                              Divorced
-                            </SelectItem>
-                            <SelectItem value={MaritalStatus.WIDOWED}>
-                              Widowed
-                            </SelectItem>
-                            <SelectItem value={MaritalStatus.SEPARATED}>
-                              Separated
-                            </SelectItem>
+                            <SelectItem value="SINGLE">Single</SelectItem>
+                            <SelectItem value="MARRIED">Married</SelectItem>
+                            <SelectItem value="DIVORCED">Divorced</SelectItem>
+                            <SelectItem value="WIDOWED">Widowed</SelectItem>
+                            <SelectItem value="SEPARATED">Separated</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
@@ -609,39 +602,17 @@ export default function EditStaff() {
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={StaffRole.TEACHER}>
-                              Teacher
-                            </SelectItem>
-                            <SelectItem value={StaffRole.ADMIN}>
-                              Admin
-                            </SelectItem>
-                            <SelectItem value={StaffRole.HEAD_TEACHER}>
-                              Head Teacher
-                            </SelectItem>
-                            <SelectItem value={StaffRole.BURSARY}>
-                              Bursary
-                            </SelectItem>
-                            <SelectItem value={StaffRole.STOREKEEPER}>
-                              Storekeeper
-                            </SelectItem>
-                            <SelectItem value={StaffRole.NURSE}>
-                              Nurse
-                            </SelectItem>
-                            <SelectItem value={StaffRole.SUPERVISOR}>
-                              Supervisor
-                            </SelectItem>
-                            <SelectItem value={StaffRole.ICT}>
-                              ICT
-                            </SelectItem>
-                            <SelectItem value={StaffRole.CLEANERS}>
-                              Cleaners
-                            </SelectItem>
-                            <SelectItem value={StaffRole.SECURITY}>
-                              Security
-                            </SelectItem>
-                            <SelectItem value={StaffRole.OTHERS}>
-                              Others
-                            </SelectItem>
+                            <SelectItem value="TEACHER">Teacher</SelectItem>
+                            <SelectItem value="ADMIN">Admin</SelectItem>
+                            <SelectItem value="HEAD_TEACHER">Head Teacher</SelectItem>
+                            <SelectItem value="BURSARY">Bursary</SelectItem>
+                            <SelectItem value="STOREKEEPER">Storekeeper</SelectItem>
+                            <SelectItem value="NURSE">Nurse</SelectItem>
+                            <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+                            <SelectItem value="ICT">ICT</SelectItem>
+                            <SelectItem value="CLEANERS">Cleaners</SelectItem>
+                            <SelectItem value="SECURITY">Security</SelectItem>
+                            <SelectItem value="OTHERS">Others</SelectItem>
                           </SelectContent>
                         </Select>
                       )}
