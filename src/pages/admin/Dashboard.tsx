@@ -7,12 +7,15 @@ import { useAuth } from "@/contexts/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { adminApi } from "@/lib/api/admin";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StaffRole } from "@/lib/types/common";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  
   const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ["dashboardStats"],
     queryFn: () => adminApi.getDashboardStats(),
+    enabled: !!user && 'role' in user && (user.role === StaffRole.ADMIN || user.role === StaffRole.HEAD_TEACHER),
   });
 
   const currentDate = new Date().toLocaleDateString("en-US", {
