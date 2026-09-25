@@ -33,12 +33,12 @@ import { NIGERIAN_STATES, getLGAsByState } from '@/lib/data/nigeria-states';
 const staffSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
-  middleName: z.string().min(1, 'Middle name is required'),
+  middleName: z.string().optional(),
   email: z.string().email('Invalid email address'),
   phone: z.string().min(1, 'Phone number is required'),
   role: z.nativeEnum(StaffRole),
   gender: z.nativeEnum(Gender).optional(),
-  dateOfBirth: z.string().min(1, 'Date of birth is required'),
+  dateOfBirth: z.string().optional(),
   address: z.string().optional(),
   maritalStatus: z.nativeEnum(MaritalStatus).optional(),
   nationality: z.string().optional(),
@@ -65,7 +65,7 @@ const staffSchema = z.object({
       }),
     )
     .optional(),
-  dateOfEmployment: z.string().min(1, 'Date of employment is required'),
+  dateOfEmployment: z.string().optional(),
   nextOfKinName: z.string().optional(),
   nextOfKinPhone: z.string().optional(),
   nextOfKinRelationship: z.string().optional(),
@@ -142,6 +142,7 @@ export default function EditStaff() {
     register,
     handleSubmit,
     setValue,
+    reset,
     watch,
     formState: { errors, isSubmitting },
   } = useForm<StaffFormData>({
@@ -152,6 +153,44 @@ export default function EditStaff() {
 
   useEffect(() => {
     if (staff?.data) {
+
+      console.log('📋 [EditStaff] Loading staff data:', staff.data);
+
+      const formData = {
+        firstName: staff.data.firstName || '',
+        lastName: staff.data.lastName || '',
+        middleName: staff.data.middleName || '',
+        email: staff.data.email || '',
+        phone: staff.data.phone || '',
+        role: staff.data.role,
+        gender: staff.data.gender,
+        dateOfBirth: staff.data.dateOfBirth?.split('T')[0] || '',
+        address: staff.data.address || '',
+        maritalStatus: staff.data.maritalStatus,
+        nationality: staff.data.nationality || '',
+        state: staff.data.state || '',
+        lga: staff.data.lga || '',
+        religion: staff.data.religion || '',
+        subjectId: staff.data.subjectId || '',
+        yearsOfExperience: staff.data.yearsOfExperience,
+        dateOfEmployment: staff.data.dateOfEmployment?.split('T')[0] || '',
+        nextOfKinName: staff.data.nextOfKinName || '',
+        nextOfKinPhone: staff.data.nextOfKinPhone || '',
+        nextOfKinRelationship: staff.data.nextOfKinRelationship || '',
+        nextOfKinAddress: staff.data.nextOfKinAddress || '',
+      };
+
+      console.log('📋 [EditStaff] Form data to reset:', formData);
+      reset(formData);
+
+      setSelectedState(staff.data.state || '');
+
+      if (staff.data.qualifications && staff.data.qualifications.length > 0) {
+        console.log(
+          '📋 [EditStaff] Loading qualifications:',
+          staff.data.qualifications,
+        );
+
       // Basic information
       setValue('firstName', staff.data.firstName || '');
       setValue('lastName', staff.data.lastName || '');
@@ -185,22 +224,79 @@ export default function EditStaff() {
       // Arrays
       if (staff.data.qualifications) {
         setQualifications(staff.data.qualifications);
+      } else {
+        setQualifications([]);
       }
-      if (staff.data.previousEmployment) {
+
+      if (
+        staff.data.previousEmployment &&
+        staff.data.previousEmployment.length > 0
+      ) {
+        console.log(
+          '📋 [EditStaff] Loading previous employment:',
+          staff.data.previousEmployment,
+        );
         setPreviousEmployment(staff.data.previousEmployment);
+      } else {
+        setPreviousEmployment([]);
       }
     }
-  }, [staff, setValue]);
+  }, [staff, reset]);
 
   const updateStaffMutation = useMutation({
     mutationFn: async (data: StaffFormData) => {
+      console.log('📤 [EditStaff] Form data to submit:', data);
+      console.log('📤 [EditStaff] Qualifications:', qualifications);
+      console.log('📤 [EditStaff] Previous employment:', previousEmployment);
+
+      // Prepare update data - only include fields that are provided
+      const updateData: Record<string, unknown> = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+      };
+
+      // Add optional fields only if they have values
+      if (data.middleName) updateData.middleName = data.middleName;
+      if (data.gender) updateData.gender = data.gender;
+      if (data.dateOfBirth) updateData.dateOfBirth = data.dateOfBirth;
+      if (data.address) updateData.address = data.address;
+      if (data.maritalStatus) updateData.maritalStatus = data.maritalStatus;
+      if (data.nationality) updateData.nationality = data.nationality;
+      if (data.state) updateData.state = data.state;
+      if (data.lga) updateData.lga = data.lga;
+      if (data.religion) updateData.religion = data.religion;
+      if (data.subjectId) updateData.subjectId = data.subjectId;
+      if (
+        data.yearsOfExperience !== undefined &&
+        data.yearsOfExperience !== null
+      ) {
+        updateData.yearsOfExperience = data.yearsOfExperience;
+      }
+      if (data.dateOfEmployment)
+        updateData.dateOfEmployment = data.dateOfEmployment;
+      if (data.nextOfKinName) updateData.nextOfKinName = data.nextOfKinName;
+      if (data.nextOfKinPhone) updateData.nextOfKinPhone = data.nextOfKinPhone;
+      if (data.nextOfKinRelationship)
+        updateData.nextOfKinRelationship = data.nextOfKinRelationship;
+      if (data.nextOfKinAddress)
+        updateData.nextOfKinAddress = data.nextOfKinAddress;
+
+      // Add arrays only if they have items
+      if (qualifications.length > 0) {
+        updateData.qualifications = qualifications;
+      }
+      if (previousEmployment.length > 0) {
+        updateData.previousEmployment = previousEmployment;
+      }
+
+      console.log('📤 [EditStaff] Update data to send:', updateData);
+
       // First update the staff
-      const staff = await staffApi.updateStaff(staffId!, {
-        ...data,
-        qualifications: qualifications.length > 0 ? qualifications : undefined,
-        previousEmployment:
-          previousEmployment.length > 0 ? previousEmployment : undefined,
-      });
+      const staff = await staffApi.updateStaff(staffId!, updateData);
+      console.log('✅ [EditStaff] Staff update response:', staff);
 
       // If assignment is enabled and role is TEACHER, create assignment
       if (enableAssignment && data.role === StaffRole.TEACHER && staff.data) {
@@ -233,7 +329,7 @@ export default function EditStaff() {
             }
           }
         } catch (assignmentError) {
-          console.error('Assignment failed:', assignmentError);
+          console.error('❌ [EditStaff] Assignment failed:', assignmentError);
           return {
             staff,
             assignmentCreated: false,
@@ -264,11 +360,14 @@ export default function EditStaff() {
       navigate('/admin/staff');
     },
     onError: (error: Error) => {
+      console.error('❌ [EditStaff] Update error:', error);
       toast.error(error.message || 'Failed to update staff');
     },
   });
 
   const onSubmit = (data: StaffFormData) => {
+    console.log('📝 [EditStaff] Form submitted with data:', data);
+    console.log('📝 [EditStaff] Form validation errors:', errors);
     updateStaffMutation.mutate(data);
   };
 
@@ -424,7 +523,7 @@ export default function EditStaff() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="middleName">Middle Name *</Label>
+                    <Label htmlFor="middleName">Middle Name</Label>
                     <Input id="middleName" {...register('middleName')} />
                     {errors.middleName && (
                       <p className="text-sm text-destructive">
@@ -451,7 +550,7 @@ export default function EditStaff() {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
                     <Input
                       id="dateOfBirth"
                       type="date"
@@ -472,6 +571,7 @@ export default function EditStaff() {
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          defaultValue={field.value}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select gender" />
@@ -483,6 +583,11 @@ export default function EditStaff() {
                         </Select>
                       )}
                     />
+                    {errors.gender && (
+                      <p className="text-sm text-destructive">
+                        {errors.gender.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="maritalStatus">Marital Status</Label>
@@ -493,6 +598,7 @@ export default function EditStaff() {
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          defaultValue={field.value}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select marital status" />
@@ -507,10 +613,20 @@ export default function EditStaff() {
                         </Select>
                       )}
                     />
+                    {errors.maritalStatus && (
+                      <p className="text-sm text-destructive">
+                        {errors.maritalStatus.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nationality">Nationality</Label>
                     <Input id="nationality" {...register('nationality')} />
+                    {errors.nationality && (
+                      <p className="text-sm text-destructive">
+                        {errors.nationality.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">State</Label>
@@ -524,6 +640,7 @@ export default function EditStaff() {
                             setSelectedState(value);
                           }}
                           value={field.value}
+                          defaultValue={field.value}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select state" />
@@ -538,6 +655,11 @@ export default function EditStaff() {
                         </Select>
                       )}
                     />
+                    {errors.state && (
+                      <p className="text-sm text-destructive">
+                        {errors.state.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lga">LGA</Label>
@@ -570,14 +692,29 @@ export default function EditStaff() {
                         </Select>
                       )}
                     />
+                    {errors.lga && (
+                      <p className="text-sm text-destructive">
+                        {errors.lga.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="religion">Religion</Label>
                     <Input id="religion" {...register('religion')} />
+                    {errors.religion && (
+                      <p className="text-sm text-destructive">
+                        {errors.religion.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label htmlFor="address">Address</Label>
                     <Input id="address" {...register('address')} />
+                    {errors.address && (
+                      <p className="text-sm text-destructive">
+                        {errors.address.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -597,6 +734,7 @@ export default function EditStaff() {
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          defaultValue={field.value}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select role" />
@@ -634,11 +772,14 @@ export default function EditStaff() {
                         valueAsNumber: true,
                       })}
                     />
+                    {errors.yearsOfExperience && (
+                      <p className="text-sm text-destructive">
+                        {errors.yearsOfExperience.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="dateOfEmployment">
-                      Date of Employment *
-                    </Label>
+                    <Label htmlFor="dateOfEmployment">Date of Employment</Label>
                     <Input
                       id="dateOfEmployment"
                       type="date"
@@ -659,6 +800,7 @@ export default function EditStaff() {
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
+                          defaultValue={field.value}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select subject" />
@@ -673,6 +815,11 @@ export default function EditStaff() {
                         </Select>
                       )}
                     />
+                    {errors.subjectId && (
+                      <p className="text-sm text-destructive">
+                        {errors.subjectId.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -812,6 +959,11 @@ export default function EditStaff() {
                   <div className="space-y-2">
                     <Label htmlFor="nextOfKinName">Next of Kin Name</Label>
                     <Input id="nextOfKinName" {...register('nextOfKinName')} />
+                    {errors.nextOfKinName && (
+                      <p className="text-sm text-destructive">
+                        {errors.nextOfKinName.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nextOfKinPhone">Next of Kin Phone</Label>
@@ -819,6 +971,11 @@ export default function EditStaff() {
                       id="nextOfKinPhone"
                       {...register('nextOfKinPhone')}
                     />
+                    {errors.nextOfKinPhone && (
+                      <p className="text-sm text-destructive">
+                        {errors.nextOfKinPhone.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nextOfKinRelationship">Relationship</Label>
@@ -826,6 +983,11 @@ export default function EditStaff() {
                       id="nextOfKinRelationship"
                       {...register('nextOfKinRelationship')}
                     />
+                    {errors.nextOfKinRelationship && (
+                      <p className="text-sm text-destructive">
+                        {errors.nextOfKinRelationship.message}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nextOfKinAddress">
@@ -835,6 +997,11 @@ export default function EditStaff() {
                       id="nextOfKinAddress"
                       {...register('nextOfKinAddress')}
                     />
+                    {errors.nextOfKinAddress && (
+                      <p className="text-sm text-destructive">
+                        {errors.nextOfKinAddress.message}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

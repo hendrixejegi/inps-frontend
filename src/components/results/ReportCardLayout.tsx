@@ -186,14 +186,14 @@ export function ReportCardLayout({
               <td>N/A</td>
             </tr>
             <tr className="*:border *:p-1 ">
-              <td className="uppercase font-bold bg-gray-50">
+              {/* <td className="uppercase font-bold bg-gray-50">
                 Times School Opened
               </td>
               <td>N/A</td>
               <td className="uppercase font-bold bg-gray-50">
                 % Times Present
               </td>
-              <td>N/A</td>
+              <td>N/A</td> */}
               <td className="uppercase font-bold bg-gray-50">Position</td>
               <td>{data.summary?.overallPosition || 'N/A'}</td>
             </tr>
